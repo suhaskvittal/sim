@@ -1,0 +1,345 @@
+
+---------------------------------------------
+
+N_THREADS               :	4
+
+---------------------------------------------
+
+LLC_SIZE_KB             :	8192
+LLC_ASSOC               :	8
+LLC_REPL_POLICY         :	LRU, prioritize clean lines
+
+---------------------------------------------
+
+ROB_WIDTH               :	256
+OS_PAGESIZE             :	4096
+LINESIZE                :	64
+[DRAM] Row Buffer Policy: OPEN_PAGE
+[DRAM] Refresh Policy: RANK_LEVEL_STAGGERED
+[DRAM] Request Size: 64 bytes
+[DRAM] Shift Bits: 6
+[DRAM MOP Enabled] MOP Size: 4
+Expected: rohirababgchlo, Actual: rohirababgchlo
+[DRAM] Channel Position: 2| Width: 1
+[DRAM] Rank Position: 8| Width: 0
+[DRAM] BankGroup Position: 3| Width: 3
+[DRAM] Bank Position: 6| Width: 2
+[DRAM] Row Position: 12| Width: 17
+[DRAM] High Position: 8| Width: 4
+[DRAM] Low Position: 0| Width: 2
+[RFM] rfm_mode: 0
+[ALERT] alert_mode: 0
+[MOAT] moat_mode: 0
+[MIRZA] mirza_mode: 0
+[DRAMSim3] Starting a JedecDRAMSystem
+read_to_read_l: 12
+read_to_read_s: 8
+read_to_read_o: 10
+
+
+--------------------------------------------------------------------------------
+------------------------------- SIMULATION START -------------------------------
+--------------------------------------------------------------------------------
+
+
+CYCLE =    0M [ INST:     0M     0M     0M     0M ]
+	progress: ..................................................
+CYCLE =   50M [ INST:    28M    28M    28M    28M ]
+	progress: ..................................................
+CYCLE =  100M [ INST:    56M    56M    56M    56M ]
+	progress: ..................................................
+CYCLE =  150M [ INST:    84M    84M    84M    84M ]
+	progress: ............................
+
+--------------------------------------------------------------------------------
+-------------------------------- SIMULATION END --------------------------------
+--------------------------------------------------------------------------------
+
+SIM_TIME_IN_CORE        	43.6197
+SIM_TIME_IN_MEM         	234.311
+SYS_CYCLES              	177885353
+
+CORE_0_INST             	100297056
+CORE_0_IPC              	0.56383
+CORE_0_MISSES           	2657732
+CORE_0_ACCESSES         	3367338
+CORE_0_MPKI             	26.4986
+CORE_0_APKI             	33.5736
+
+CORE_1_INST             	100229246
+CORE_1_IPC              	0.563449
+CORE_1_MISSES           	2655220
+CORE_1_ACCESSES         	3365042
+CORE_1_MPKI             	26.4915
+CORE_1_APKI             	33.5735
+
+CORE_2_INST             	100232747
+CORE_2_IPC              	0.563468
+CORE_2_MISSES           	2654517
+CORE_2_ACCESSES         	3365145
+CORE_2_MPKI             	26.4835
+CORE_2_APKI             	33.5733
+
+CORE_3_INST             	100000003
+CORE_3_IPC              	0.56216
+CORE_3_MISSES           	2653563
+CORE_3_ACCESSES         	3357342
+CORE_3_MPKI             	26.5356
+CORE_3_APKI             	33.5734
+
+LLC_MISSES              	10621032
+LLC_ACCESSES            	13454867
+LLC_MISS_RATE           	78.9382
+LLC_LRU_WB_AVOIDED      	7329285
+
+LLC_MISS_PENALTY        	312.2
+
+OS_MAPPED_PAGES         	136129
+OS_TOTAL_PAGE_FRAMES    	8388608
+
+MEM_FAILED_REQUESTS     	0
+
+###########################################
+## Statistics of Channel 0
+###########################################
+acts.0.7.3                     =       122292   # ACTs Counter
+acts.0.7.1                     =       121615   # ACTs Counter
+acts.0.7.0                     =       122580   # ACTs Counter
+acts.0.6.2                     =       123618   # ACTs Counter
+acts.0.6.1                     =       122059   # ACTs Counter
+acts.0.5.2                     =       124535   # ACTs Counter
+acts.0.5.1                     =       123541   # ACTs Counter
+acts.0.4.3                     =       121371   # ACTs Counter
+acts.0.4.2                     =       123476   # ACTs Counter
+acts.0.4.1                     =       121100   # ACTs Counter
+acts.0.4.0                     =       122998   # ACTs Counter
+acts.0.3.3                     =       122485   # ACTs Counter
+acts.0.3.1                     =       121200   # ACTs Counter
+acts.0.3.0                     =       123894   # ACTs Counter
+acts.0.2.3                     =       122381   # ACTs Counter
+acts.0.2.2                     =       123329   # ACTs Counter
+num_ondemand_pres              =      3587455   # Number of ondemend PRE commands
+num_pre_cmds                   =      3927610   # Number of PRE commands
+num_act_cmds                   =      3927637   # Number of ACT commands
+num_write_row_hits             =        77590   # Number of write row buffer hits
+num_writes_done                =      1560830   # Number of read requests issued
+acts.0.5.0                     =       123735   # ACTs Counter
+num_read_cmds                  =      5096345   # Number of READ/READP commands
+num_refab_cmds                 =        11366   # Number of REFab commands
+num_refsb_cmds                 =            0   # Number of REFsb commands
+acts.0.6.3                     =       124344   # ACTs Counter
+acts.0.1.2                     =       123955   # ACTs Counter
+num_read_row_hits              =      1782112   # Number of read row buffer hits
+num_reads_done                 =      5096343   # Number of read requests issued
+acts.0.7.2                     =       124210   # ACTs Counter
+num_rfmsb_cmds                 =            0   # Number of RFMSB commands
+acts.0.6.0                     =       123480   # ACTs Counter
+acts.0.2.1                     =       122018   # ACTs Counter
+num_write_cmds                 =       666238   # Number of WRITE/WRITEP commands
+acts.0.0.0                     =       122145   # ACTs Counter
+num_cycles                     =    106731212   # Number of DRAM cycles
+acts.0.5.3                     =       123244   # ACTs Counter
+num_refb_cmds                  =            0   # Number of REFb commands
+acts.0.3.2                     =       122924   # ACTs Counter
+num_write_buf_hits             =            0   # Number of write buffer hits
+num_srefe_cmds                 =            0   # Number of SREFE commands
+epoch_num                      =            1   # Number of epochs
+num_srefx_cmds                 =            0   # Number of SREFX commands
+num_rfmab_cmds                 =            0   # Number of RFMAB commands
+num_alerts                     =            0   # Number of ALERTs triggered
+hbm_dual_cmds                  =            0   # Number of cycles dual cmds issued
+acts.0.0.3                     =       122248   # ACTs Counter
+acts.0.0.2                     =       122374   # ACTs Counter
+acts.0.1.0                     =       122114   # ACTs Counter
+acts.0.0.1                     =       122504   # ACTs Counter
+acts.0.1.1                     =       122006   # ACTs Counter
+acts.0.2.0                     =       122651   # ACTs Counter
+acts.0.1.3                     =       121211   # ACTs Counter
+rank_active_cycles.0           =     95082828   # Cyles of rank active rank.0
+all_bank_idle_cycles.0         =     11648384   # Cyles of all bank idle in rank rank.0
+sref_cycles.0                  =            0   # Cyles of rank in SREF mode rank.0
+prac_per_tREFI.0               =      5166622   # PRAC counters per tREFI geometric_bin.0
+prac_per_tREFI.1               =       124891   # PRAC counters per tREFI geometric_bin.1
+prac_per_tREFI.2               =       128530   # PRAC counters per tREFI geometric_bin.2
+prac_per_tREFI.3               =       280695   # PRAC counters per tREFI geometric_bin.3
+prac_per_tREFI.4               =       109739   # PRAC counters per tREFI geometric_bin.4
+prac_per_tREFI.5               =         8611   # PRAC counters per tREFI geometric_bin.5
+prac_per_tREFI.6               =           40   # PRAC counters per tREFI geometric_bin.6
+prac_per_tREFI.7               =            0   # PRAC counters per tREFI geometric_bin.7
+prac_per_tREFI.8               =            8   # PRAC counters per tREFI geometric_bin.8
+prac_per_tREFI.9               =            0   # PRAC counters per tREFI geometric_bin.9
+prac_per_tREFI.10              =            0   # PRAC counters per tREFI geometric_bin.10
+prac_per_tREFI.11              =            0   # PRAC counters per tREFI geometric_bin.11
+prac_per_tREFI.12              =          256   # PRAC counters per tREFI geometric_bin.12
+interarrival_latency[-0]       =            0   # Request interarrival latency (cycles)
+interarrival_latency[0-9]      =      4616297   # Request interarrival latency (cycles)
+interarrival_latency[10-19]    =       847109   # Request interarrival latency (cycles)
+interarrival_latency[20-29]    =       331215   # Request interarrival latency (cycles)
+interarrival_latency[30-39]    =       201465   # Request interarrival latency (cycles)
+interarrival_latency[40-49]    =       145444   # Request interarrival latency (cycles)
+interarrival_latency[50-59]    =       109013   # Request interarrival latency (cycles)
+interarrival_latency[60-69]    =        83059   # Request interarrival latency (cycles)
+interarrival_latency[70-79]    =        69467   # Request interarrival latency (cycles)
+interarrival_latency[80-89]    =        61032   # Request interarrival latency (cycles)
+interarrival_latency[90-99]    =        47954   # Request interarrival latency (cycles)
+interarrival_latency[100-]     =       145132   # Request interarrival latency (cycles)
+write_latency[-0]              =            0   # Write cmd latency (cycles)
+write_latency[0-19]            =            0   # Write cmd latency (cycles)
+write_latency[20-39]           =            0   # Write cmd latency (cycles)
+write_latency[40-59]           =           80   # Write cmd latency (cycles)
+write_latency[60-79]           =          205   # Write cmd latency (cycles)
+write_latency[80-99]           =          229   # Write cmd latency (cycles)
+write_latency[100-119]         =          272   # Write cmd latency (cycles)
+write_latency[120-139]         =          485   # Write cmd latency (cycles)
+write_latency[140-159]         =          977   # Write cmd latency (cycles)
+write_latency[160-179]         =         1279   # Write cmd latency (cycles)
+write_latency[180-199]         =         1338   # Write cmd latency (cycles)
+write_latency[200-]            =       661373   # Write cmd latency (cycles)
+read_latency[-0]               =            0   # Read request latency (cycles)
+read_latency[0-19]             =            1   # Read request latency (cycles)
+read_latency[20-39]            =            0   # Read request latency (cycles)
+read_latency[40-59]            =      1280475   # Read request latency (cycles)
+read_latency[60-79]            =       235752   # Read request latency (cycles)
+read_latency[80-99]            =       190687   # Read request latency (cycles)
+read_latency[100-119]          =        61365   # Read request latency (cycles)
+read_latency[120-139]          =      1190974   # Read request latency (cycles)
+read_latency[140-159]          =       379950   # Read request latency (cycles)
+read_latency[160-179]          =       169017   # Read request latency (cycles)
+read_latency[180-199]          =       190496   # Read request latency (cycles)
+read_latency[200-]             =      1397626   # Read request latency (cycles)
+refab_energy                   =  2.12588e+10   # 
+ref_energy                     =            0   # Refresh energy
+refb_energy                    =           -0   # Refresh-bank energy
+write_energy                   =  5.01437e+09   # Write energy
+read_energy                    =  4.54023e+10   # Read energy
+act_energy                     =  4.46808e+10   # Activation energy
+sref_energy.0                  =            0   # SREF energy rank.0
+pre_stb_energy.0               =  4.13751e+09   # Precharge standby energy rank.0
+act_stb_energy.0               =  4.74653e+10   # Active standby energy rank.0
+average_read_latency           =      186.283   # Average read request latency (cycles)
+average_interarrival           =      16.0325   # Average request interarrival latency (cycles)
+total_energy                   =    1.467e+11   # Total energy (pJ)
+average_power                  =      1374.48   # Average power (mW)
+average_bandwidth              =      9.59589   # Average bandwidth
+###########################################
+## Statistics of Channel 1
+###########################################
+acts.0.7.3                     =       121951   # ACTs Counter
+acts.0.7.1                     =       121234   # ACTs Counter
+acts.0.7.0                     =       123481   # ACTs Counter
+acts.0.6.2                     =       123871   # ACTs Counter
+acts.0.6.1                     =       121515   # ACTs Counter
+acts.0.5.2                     =       121781   # ACTs Counter
+acts.0.5.1                     =       122579   # ACTs Counter
+acts.0.4.3                     =       121160   # ACTs Counter
+acts.0.4.2                     =       123219   # ACTs Counter
+acts.0.4.1                     =       122783   # ACTs Counter
+acts.0.4.0                     =       122764   # ACTs Counter
+acts.0.3.3                     =       121513   # ACTs Counter
+acts.0.3.1                     =       122783   # ACTs Counter
+acts.0.3.0                     =       123307   # ACTs Counter
+acts.0.2.3                     =       123147   # ACTs Counter
+acts.0.2.2                     =       123292   # ACTs Counter
+num_ondemand_pres              =      3588352   # Number of ondemend PRE commands
+num_pre_cmds                   =      3928324   # Number of PRE commands
+num_act_cmds                   =      3928351   # Number of ACT commands
+num_write_row_hits             =        77832   # Number of write row buffer hits
+num_writes_done                =      1563367   # Number of read requests issued
+acts.0.5.0                     =       122669   # ACTs Counter
+num_read_cmds                  =      5095970   # Number of READ/READP commands
+num_refab_cmds                 =        11366   # Number of REFab commands
+num_refsb_cmds                 =            0   # Number of REFsb commands
+acts.0.6.3                     =       123724   # ACTs Counter
+acts.0.1.2                     =       123225   # ACTs Counter
+num_read_row_hits              =      1783924   # Number of read row buffer hits
+num_reads_done                 =      5095968   # Number of read requests issued
+acts.0.7.2                     =       123740   # ACTs Counter
+num_rfmsb_cmds                 =            0   # Number of RFMSB commands
+acts.0.6.0                     =       122908   # ACTs Counter
+acts.0.2.1                     =       121995   # ACTs Counter
+num_write_cmds                 =       668989   # Number of WRITE/WRITEP commands
+acts.0.0.0                     =       123408   # ACTs Counter
+num_cycles                     =    106731212   # Number of DRAM cycles
+acts.0.5.3                     =       123614   # ACTs Counter
+num_refb_cmds                  =            0   # Number of REFb commands
+acts.0.3.2                     =       123284   # ACTs Counter
+num_write_buf_hits             =            0   # Number of write buffer hits
+num_srefe_cmds                 =            0   # Number of SREFE commands
+epoch_num                      =            1   # Number of epochs
+num_srefx_cmds                 =            0   # Number of SREFX commands
+num_rfmab_cmds                 =            0   # Number of RFMAB commands
+num_alerts                     =            0   # Number of ALERTs triggered
+hbm_dual_cmds                  =            0   # Number of cycles dual cmds issued
+acts.0.0.3                     =       122418   # ACTs Counter
+acts.0.0.2                     =       124614   # ACTs Counter
+acts.0.1.0                     =       123859   # ACTs Counter
+acts.0.0.1                     =       121897   # ACTs Counter
+acts.0.1.1                     =       121248   # ACTs Counter
+acts.0.2.0                     =       123105   # ACTs Counter
+acts.0.1.3                     =       122263   # ACTs Counter
+rank_active_cycles.0           =     95084332   # Cyles of rank active rank.0
+all_bank_idle_cycles.0         =     11646880   # Cyles of all bank idle in rank rank.0
+sref_cycles.0                  =            0   # Cyles of rank in SREF mode rank.0
+prac_per_tREFI.0               =      5166646   # PRAC counters per tREFI geometric_bin.0
+prac_per_tREFI.1               =       125141   # PRAC counters per tREFI geometric_bin.1
+prac_per_tREFI.2               =       129324   # PRAC counters per tREFI geometric_bin.2
+prac_per_tREFI.3               =       279804   # PRAC counters per tREFI geometric_bin.3
+prac_per_tREFI.4               =       109580   # PRAC counters per tREFI geometric_bin.4
+prac_per_tREFI.5               =         8589   # PRAC counters per tREFI geometric_bin.5
+prac_per_tREFI.6               =           48   # PRAC counters per tREFI geometric_bin.6
+prac_per_tREFI.7               =            1   # PRAC counters per tREFI geometric_bin.7
+prac_per_tREFI.8               =            3   # PRAC counters per tREFI geometric_bin.8
+prac_per_tREFI.9               =            0   # PRAC counters per tREFI geometric_bin.9
+prac_per_tREFI.10              =            0   # PRAC counters per tREFI geometric_bin.10
+prac_per_tREFI.11              =            0   # PRAC counters per tREFI geometric_bin.11
+prac_per_tREFI.12              =          256   # PRAC counters per tREFI geometric_bin.12
+interarrival_latency[-0]       =            0   # Request interarrival latency (cycles)
+interarrival_latency[0-9]      =      4629821   # Request interarrival latency (cycles)
+interarrival_latency[10-19]    =       835442   # Request interarrival latency (cycles)
+interarrival_latency[20-29]    =       330442   # Request interarrival latency (cycles)
+interarrival_latency[30-39]    =       200193   # Request interarrival latency (cycles)
+interarrival_latency[40-49]    =       145927   # Request interarrival latency (cycles)
+interarrival_latency[50-59]    =       109323   # Request interarrival latency (cycles)
+interarrival_latency[60-69]    =        83591   # Request interarrival latency (cycles)
+interarrival_latency[70-79]    =        69948   # Request interarrival latency (cycles)
+interarrival_latency[80-89]    =        61191   # Request interarrival latency (cycles)
+interarrival_latency[90-99]    =        47462   # Request interarrival latency (cycles)
+interarrival_latency[100-]     =       146002   # Request interarrival latency (cycles)
+write_latency[-0]              =            0   # Write cmd latency (cycles)
+write_latency[0-19]            =            0   # Write cmd latency (cycles)
+write_latency[20-39]           =            0   # Write cmd latency (cycles)
+write_latency[40-59]           =           89   # Write cmd latency (cycles)
+write_latency[60-79]           =          206   # Write cmd latency (cycles)
+write_latency[80-99]           =          191   # Write cmd latency (cycles)
+write_latency[100-119]         =          290   # Write cmd latency (cycles)
+write_latency[120-139]         =          471   # Write cmd latency (cycles)
+write_latency[140-159]         =         1010   # Write cmd latency (cycles)
+write_latency[160-179]         =         1285   # Write cmd latency (cycles)
+write_latency[180-199]         =         1402   # Write cmd latency (cycles)
+write_latency[200-]            =       664045   # Write cmd latency (cycles)
+read_latency[-0]               =            0   # Read request latency (cycles)
+read_latency[0-19]             =            0   # Read request latency (cycles)
+read_latency[20-39]            =            0   # Read request latency (cycles)
+read_latency[40-59]            =      1279236   # Read request latency (cycles)
+read_latency[60-79]            =       237582   # Read request latency (cycles)
+read_latency[80-99]            =       190610   # Read request latency (cycles)
+read_latency[100-119]          =        62106   # Read request latency (cycles)
+read_latency[120-139]          =      1187098   # Read request latency (cycles)
+read_latency[140-159]          =       379168   # Read request latency (cycles)
+read_latency[160-179]          =       169510   # Read request latency (cycles)
+read_latency[180-199]          =       189571   # Read request latency (cycles)
+read_latency[200-]             =      1401087   # Read request latency (cycles)
+refab_energy                   =  2.12588e+10   # 
+ref_energy                     =            0   # Refresh energy
+refb_energy                    =           -0   # Refresh-bank energy
+write_energy                   =  5.03508e+09   # Write energy
+read_energy                    =   4.5399e+10   # Read energy
+act_energy                     =  4.46889e+10   # Activation energy
+sref_energy.0                  =            0   # SREF energy rank.0
+pre_stb_energy.0               =  4.13697e+09   # Precharge standby energy rank.0
+act_stb_energy.0               =  4.74661e+10   # Active standby energy rank.0
+average_read_latency           =      186.762   # Average read request latency (cycles)
+average_interarrival           =      16.0273   # Average request interarrival latency (cycles)
+total_energy                   =  1.46726e+11   # Total energy (pJ)
+average_power                  =      1374.72   # Average power (mW)
+average_bandwidth              =        9.599   # Average bandwidth

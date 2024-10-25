@@ -45,8 +45,9 @@ target_include_directories(sim PRIVATE "src")
 add_subdirectory(DRAMsim3)
 
 target_link_libraries(sim PRIVATE ZLIB::ZLIB dramsim3)
-if (CMAKE_BUILD_TYPE MATCHES "Profile")
-#   target_link_libraries(sim PRIVATE -pg)
-endif()
 
-target_compile_definitions(sim PRIVATE -DN_THREADS=4)
+target_compile_definitions(sim PRIVATE N_THREADS=4)
+# Optional compile definitions:
+if (LLC_REPL_POLICY)
+    target_compile_definitions(sim PRIVATE LLC_REPL_POLICY=CacheReplPolicy::${LLC_REPL_POLICY})
+endif()

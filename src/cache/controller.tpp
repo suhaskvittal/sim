@@ -15,7 +15,9 @@
 __TEMPLATE_HEADER__
 __TEMPLATE_CLASS__::CacheController(uint64_t cache_lat)
     :cache_latency_(cache_lat)
-{}
+{
+    mshr_.reserve(MSHR_SIZE);
+}
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -24,8 +26,8 @@ __TEMPLATE_HEADER__ void
 __TEMPLATE_CLASS__::tick() {
     for (auto it = bounced_requests_.begin(); it != bounced_requests_.end(); )
     {
-        const auto& [lineaddr, is_load, mshr_id] = *it;
-        if (ds3i_->make_request(lineaddr, is_load, mshr_id)) {
+        const auto& [lineaddr, is_load] = *it;
+        if (ds3i_->make_request(lineaddr, is_load)) {
             it = bounced_requests_.erase(it);
         } else {
             ++it;
@@ -44,25 +46,23 @@ __TEMPLATE_CLASS__::access(uint64_t lineaddr, size_t coreid, size_t robid, uint6
     // can just treat this as a cache hit.
     uint64_t vic;
     if (is_load) {
-        if (!avail_mshr_ids_) {
+        if (mshr_.size() == MSHR_SIZE) {
             return -1;
         }
     }
-    CacheResult r = cache_.access(lineaddr, is_load, vic);
+    CacheResult r = cache_.access(lineaddr, !is_load, vic);
     retval = (r==CacheResult::HIT) ? 1 : 0;
     if (is_load) {
         if (r == CacheResult::HIT) {
             GL_cores_[coreid].rob_[robid].end_cycle_ = GL_cycle_ + cache_latency_;
-            retval = 1;
         } else {
             add_mshr_entry(lineaddr, coreid, robid, inst_num);
-            retval = 0;
         }
     }
     // Handle writeback to DRAM.
     if (r == CacheResult::MISS_WITH_WB) {
-        if (!ds3i_->make_request(vic, false, 0)) {
-            bounced_requests_.emplace_back(vic, false, 0);
+        if (!ds3i_->make_request(vic, false)) {
+            bounced_requests_.emplace_back(vic, false);
         }
     }
     return retval;
@@ -72,11 +72,11 @@ __TEMPLATE_CLASS__::access(uint64_t lineaddr, size_t coreid, size_t robid, uint6
 ////////////////////////////////////////////////////////////////
 
 __TEMPLATE_HEADER__ inline void
-__TEMPLATE_CLASS__::mark_as_finished(size_t i) {
-    MSHREntry& e = mshr_[i];
+__TEMPLATE_CLASS__::mark_as_finished(uint64_t lineaddr) {
+    MSHREntry& e = mshr_.at(lineaddr);
     GL_cores_[e.coreid_].rob_[ e.robid_ ].end_cycle_ = GL_cycle_ + cache_latency_;
     // release MSHR entry
-    avail_mshr_ids_ |= (1L << i);
+    mshr_.erase(lineaddr);
     // update stats.
     ++s_num_delays_;
     s_tot_delay_ += GL_cycle_ - e.cycle_fired_;
@@ -108,18 +108,12 @@ __TEMPLATE_CLASS__::dump_debug_info(std::ostream& out) {
 
 __TEMPLATE_HEADER__ void
 __TEMPLATE_CLASS__::add_mshr_entry(uint64_t lineaddr, size_t coreid, size_t robid, uint64_t inst_num) {
-    size_t i = ffsll(avail_mshr_ids_)-1;
-
-    mshr_[i].coreid_ = coreid;
-    mshr_[i].robid_ = robid;
-    mshr_[i].inst_num_ = inst_num;
-    mshr_[i].cycle_fired_ = GL_cycle_;
-
+    MSHREntry e = { static_cast<uint8_t>(coreid), static_cast<uint16_t>(robid), inst_num, GL_cycle_ };
+    mshr_[lineaddr] = e;
     // Send command to DRAM.
-    if (!ds3i_->make_request(lineaddr, true, i)) {
-        bounced_requests_.emplace_back(lineaddr, true, i);
+    if (!ds3i_->make_request(lineaddr, true)) {
+        bounced_requests_.emplace_back(lineaddr, true);
     }
-    avail_mshr_ids_ &= ~(1L << i);
 }
 
 ////////////////////////////////////////////////////////////////

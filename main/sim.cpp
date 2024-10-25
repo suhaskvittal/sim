@@ -16,7 +16,7 @@
 #include <iostream>
 
 static const uint64_t   DRAM_SIZE_MB = 32*1024;
-static const uint64_t   INST_SIM = 10'000'000;
+static const uint64_t   INST_SIM = 100'000'000;
 static const double     DS3_CLK_SCALE = (4.0/2.4) - 1.0;
 
 ////////////////////////////////////////////////////////////////
@@ -28,6 +28,8 @@ Core        GL_cores_[N_THREADS];
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
+void print_sim_config(void);
+
 void print_progress(void);
 void print_announcement(std::string);
 
@@ -35,12 +37,15 @@ void print_announcement(std::string);
 ////////////////////////////////////////////////////////////////
 
 int main(int argc, char* argv[]) {
+    print_sim_config();
+
     std::ios_base::sync_with_stdio(false);
 
     std::string trace_file(argv[1]);
+    std::string dsim_cfg(argv[2]);
 
     OS* os = new OS(DRAM_SIZE_MB);
-    DS3Interface* ds3i = new DS3Interface("../ds3conf/base.ini");
+    DS3Interface* ds3i = new DS3Interface(dsim_cfg);
     CacheController<LLC>* llc_ctrl = new CacheController<LLC>(24);
 
     for (size_t i = 0; i < N_THREADS; i++) {
@@ -121,6 +126,35 @@ int main(int argc, char* argv[]) {
     delete llc_ctrl;
 
     return 0;
+}
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+template <class T>
+inline void list(std::string name, T value) {
+    std::cout << std::setw(24) << std::left << name << ":\t" << value << "\n";
+}
+
+void
+print_sim_config() {
+    std::cout << "\n---------------------------------------------\n\n";
+
+    list("N_THREADS", N_THREADS);
+
+    std::cout << "\n---------------------------------------------\n\n";
+
+    list("LLC_SIZE_KB", LLC_SIZE_KB);
+    list("LLC_ASSOC", LLC_ASSOC);
+    list("LLC_REPL_POLICY", repl_policy_name(LLC_REPL_POLICY));
+
+    std::cout << "\n---------------------------------------------\n\n";
+
+    list("ROB_WIDTH", ROB_WIDTH);
+    list("OS_PAGESIZE", OS_PAGESIZE);
+    list("LINESIZE", LINESIZE);
+
+    std::cout << "\n---------------------------------------------\n\n";
 }
 
 ////////////////////////////////////////////////////////////////

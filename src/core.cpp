@@ -39,13 +39,13 @@ Core::tick() {
                 rob_[robid].end_cycle_ = GL_cycle_ + BAD_LATENCY;
             }
             int retval = llc_ctrl_->access(lineaddr, coreid_, robid, curr_inst_num_, is_load);
-            if (is_load) {
-                if (retval == -1) {
-                    ++s_mshr_full_;
-                    return;
-                } else {
-                    ++s_llc_accesses_;
-                    if (retval == 0) ++s_llc_misses_;
+            if (retval == -1) {
+                ++s_mshr_full_;
+                return;
+            } else {
+                ++s_llc_accesses_;
+                if (retval == 0) {
+                    ++s_llc_misses_;
                 }
             }
             read_next_inst();
@@ -71,10 +71,12 @@ Core::print_stats(std::ostream& out) {
 
     PRINT_STAT(out, header + "_INST", finished_inst_num_);
     PRINT_STAT(out, header + "_IPC", ipc);
+    PRINT_STAT(out, header + "_MISSES", s_llc_misses_);
+    PRINT_STAT(out, header + "_ACCESSES", s_llc_accesses_);
     PRINT_STAT(out, header + "_MPKI", mpki);
     PRINT_STAT(out, header + "_APKI", apki);
-    PRINT_STAT(out, header + "_SLEEP", s_mshr_full_);
-    PRINT_STAT(out, header + "_DELAY", delay);
+//  PRINT_STAT(out, header + "_SLEEP", s_mshr_full_);
+//  PRINT_STAT(out, header + "_DELAY", delay);
     out << "\n";
 }
 

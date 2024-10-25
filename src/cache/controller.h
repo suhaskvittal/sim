@@ -29,7 +29,7 @@ struct MSHREntry {
 template <class CACHE_TYPE>
 class CacheController {
 public:
-    constexpr static size_t MSHR_SIZE = 32;
+    constexpr static size_t MSHR_SIZE = 512;
 
     CACHE_TYPE cache_;
     DS3Interface* ds3i_;
@@ -42,17 +42,12 @@ public:
 
     const uint64_t cache_latency_;
 private:
-    MSHREntry mshr_[MSHR_SIZE];
-    /*
-     * Track available MSHR entries for fast accesses. This is done
-     * with a bitvector: this is active high to use with `ffsll`.
-     * */
-    uint64_t avail_mshr_ids_ =(1L<<MSHR_SIZE)-1;
+    std::unordered_map<uint64_t, MSHREntry> mshr_;
     /*
      * Cache controller needs to retry failed reads/writes. Each entry is of the form
-     * "lineaddr,is_load,mshr_id".
+     * "lineaddr,is_load".
      * */
-    std::vector< std::tuple<uint64_t, bool, size_t> > bounced_requests_;
+    std::vector< std::tuple<uint64_t, bool> > bounced_requests_;
 public:
     CacheController(uint64_t cache_latency);
 
@@ -66,7 +61,7 @@ public:
     /*
      * Marks the corresponding entry in the MSHR as finished.
      * */
-    void mark_as_finished(size_t mshr_id);
+    void mark_as_finished(uint64_t lineaddr);
 
     void print_stats(std::ostream&, std::string cache_name);
     void dump_debug_info(std::ostream&);

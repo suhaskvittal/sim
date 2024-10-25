@@ -72,6 +72,7 @@ private:
 CacheSet::iterator lru(CacheSet&);
 CacheSet::iterator rand(CacheSet&);
 CacheSet::iterator ssrip(CacheSet&);
+CacheSet::iterator lru_wb(CacheSet&);
 
 #include "cache.tpp"
 

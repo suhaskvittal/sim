@@ -36,3 +36,22 @@ ssrip(CacheSet& s) {
 
 ////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////
+
+CacheSet::iterator
+lru_wb(CacheSet& s) {
+    auto v_it = lru(s);
+    if (v_it->second.dirty_) {
+        // Find alternative line to evict.
+        for (auto it = s.begin(); it != s.end(); it++) {
+            if ( !it->second.dirty_ 
+                && (v_it->second.dirty_ || it->second.lru_timestamp_ < v_it->second.lru_timestamp_) ) 
+            {
+                v_it = it;
+            }
+        }
+    }
+    return v_it;
+}
+
+////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////

@@ -24,15 +24,13 @@ public:
     CacheController<LLC>* llc_ctrl_;
 
     uint64_t s_queue_full_ =0;
-private:
-    std::unordered_map<uint64_t, size_t> lineaddr_mshr_map_;
 public:
     DS3Interface(std::string ds3conf);
     ~DS3Interface(void);
     /*
      * Returns false if the request could not be made.
      * */
-    bool make_request(uint64_t lineaddr, bool is_read, size_t mshr_id);
+    bool make_request(uint64_t lineaddr, bool is_read);
 
     void print_stats(void);
 };

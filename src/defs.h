@@ -22,6 +22,14 @@
 enum class CacheResult      { HIT, MISS_NO_WB, MISS_WITH_WB };
 enum class CacheReplPolicy  { LRU, RAND, SSRIP };
 
+inline std::string 
+repl_policy_name(CacheReplPolicy p) {
+    if (p == CacheReplPolicy::LRU)      return "LRU";
+    if (p == CacheReplPolicy::RAND)     return "Random";
+    if (p == CacheReplPolicy::SSRIP)    return "SSRIP";
+    return "Unknown Cache Policy";
+}
+
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 /*
@@ -31,7 +39,12 @@ constexpr size_t LLC_SIZE_KB_PER_CORE = 2*1024;
 constexpr size_t LLC_SIZE_KB = LLC_SIZE_KB_PER_CORE * N_THREADS;
 constexpr size_t LLC_ASSOC = 8;
 
-constexpr CacheReplPolicy LLC_REPL_POLICY = CacheReplPolicy::LRU;
+#ifndef LLC_REPL_POLICY
+#define LLC_REPL_POLICY CacheReplPolicy::LRU_WB
+#endif
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 /*
  * Other constants.
  * */

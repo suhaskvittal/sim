@@ -12,8 +12,7 @@ DS3Interface::DS3Interface(std::string ds3conf) {
             [this] (uint64_t byteaddr)
             {
                 uint64_t lineaddr = byteaddr >> Log2<LINESIZE>::value;
-                this->llc_ctrl_->mark_as_finished( this->lineaddr_mshr_map_.at(lineaddr) );
-                this->lineaddr_mshr_map_.erase(lineaddr);
+                this->llc_ctrl_->mark_as_finished(lineaddr);
             },
             [this] (uint64_t byteaddr)
             {}
@@ -28,16 +27,13 @@ DS3Interface::~DS3Interface() {
 ////////////////////////////////////////////////////////////////
 
 bool
-DS3Interface::make_request(uint64_t lineaddr, bool is_read, size_t mshr_id) {
+DS3Interface::make_request(uint64_t lineaddr, bool is_read) {
     uint64_t byteaddr = lineaddr << Log2<LINESIZE>::value;
     if (!mem_->WillAcceptTransaction(byteaddr, !is_read)) {
         ++s_queue_full_;
         return false;
     }
     mem_->AddTransaction(byteaddr, !is_read);
-    if (is_read) {
-        lineaddr_mshr_map_[lineaddr] = mshr_id;
-    }
     return true;
 }
 

@@ -47,8 +47,9 @@ __TEMPLATE_CLASS__::access(uint64_t lineaddr, bool is_write, uint64_t& victim_li
             // Need to select victim from cache.
             it = select_victim(s);
             victim_lineaddr = it->first;
-            if (it->second.dirty_) miss_type = CacheResult::MISS_WITH_WB;
-
+            if (it->second.dirty_) {
+                miss_type = CacheResult::MISS_WITH_WB;
+            }
             s.erase(it);
         }
         s[t] = (CacheEntry) { is_write, GL_cycle_ };
