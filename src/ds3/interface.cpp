@@ -4,15 +4,18 @@
  * */
 
 #include "ds3/interface.h"
-#include "cache/controller.h"
+#include "cache/controller/llc2.h"
 #include "utils/bitcount.h"
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 
 DS3Interface::DS3Interface(std::string ds3conf) {
     mem_ = ds3::GetMemorySystem( ds3conf, ".",
             [this] (uint64_t byteaddr)
             {
                 uint64_t lineaddr = byteaddr >> Log2<LINESIZE>::value;
-                this->llc_ctrl_->mark_as_finished(lineaddr);
+                GL_llc_controller_->mark_as_finished(lineaddr);
             },
             [this] (uint64_t byteaddr)
             {}

@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <iomanip>
+#include <string_view>
 
 #include <stdint.h>
 #include <stddef.h>
@@ -20,28 +21,42 @@
  * Enum declarations.
  * */
 enum class CacheResult      { HIT, MISS_NO_WB, MISS_WITH_WB };
-enum class CacheReplPolicy  { LRU, RAND, SSRIP };
+enum class CacheReplPolicy  { LRU, RAND, SRRIP, BRRIP };
+enum class CacheHitPolicy   { DEFAULT, INVALIDATE };
 
-inline std::string 
+inline std::string_view
 repl_policy_name(CacheReplPolicy p) {
-    if (p == CacheReplPolicy::LRU)      return "LRU";
+    if (p == CacheReplPolicy::LRU)      return "Least Recently Used";
     if (p == CacheReplPolicy::RAND)     return "Random";
-    if (p == CacheReplPolicy::SSRIP)    return "SSRIP";
+    if (p == CacheReplPolicy::SRRIP)    return "Static Re-Reference Interval Prediction";
+    if (p == CacheReplPolicy::BRRIP)    return "Bimodal Re-Reference Interval Prediction";
     return "Unknown Cache Policy";
 }
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 /*
- * LLC definition.
+ * Cache definitions.
  * */
+constexpr size_t L2C_SIZE_KB = 1024;
+constexpr size_t L2C_ASSOC = 16;
+
+#ifndef L2_REPL_POLICY
+#define L2_REPL_POLICY CacheReplPolicy::LRU
+#endif
+
 constexpr size_t LLC_SIZE_KB_PER_CORE = 2*1024;
 constexpr size_t LLC_SIZE_KB = LLC_SIZE_KB_PER_CORE * N_THREADS;
 constexpr size_t LLC_ASSOC = 8;
 
 #ifndef LLC_REPL_POLICY
-#define LLC_REPL_POLICY CacheReplPolicy::LRU_WB
+#define LLC_REPL_POLICY CacheReplPolicy::LRU
 #endif
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+constexpr size_t SRRIP_WIDTH = 3;
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -56,18 +71,20 @@ constexpr size_t LINES_PER_PAGE = OS_PAGESIZE / LINESIZE;
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
+class OS;
 class Core;
-
-extern uint64_t GL_cycle_;
-extern Core GL_cores_[N_THREADS];
+class LLC2Controller;
+class DS3Interface;
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
-template <size_t C, size_t W, CacheReplPolicy P> 
-class Cache;
+extern uint64_t         GL_cycle_;
 
-using LLC = Cache<LLC_SIZE_KB, LLC_ASSOC, LLC_REPL_POLICY>;
+extern OS*              GL_os_;
+extern Core*            GL_cores_[N_THREADS];
+extern LLC2Controller*  GL_llc_controller_;
+extern DS3Interface*    GL_memory_controller_;
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -75,6 +92,11 @@ using LLC = Cache<LLC_SIZE_KB, LLC_ASSOC, LLC_REPL_POLICY>;
 template <class NUMBER>
 inline void PRINT_STAT(std::ostream& out, std::string name, NUMBER value) {
     out << std::setw(24) << std::left << name << "\t" << value << "\n";
+}
+
+template <class NUMBER>
+inline void PRINT_STAT(std::ostream& out, std::string_view header, std::string name, NUMBER value) {
+    return PRINT_STAT(out, std::string(header) + "_" + name, value);
 }
 
 ////////////////////////////////////////////////////////////////

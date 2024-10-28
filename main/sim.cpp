@@ -6,8 +6,7 @@
 #include <defs.h>
 
 #include <core.h>
-#include <cache.h>
-#include <cache/controller.h>
+#include <cache/controller/llc2.h>
 #include <ds3/interface.h>
 #include <os.h>
 
@@ -23,13 +22,16 @@ static const double     DS3_CLK_SCALE = (4.0/2.4) - 1.0;
 ////////////////////////////////////////////////////////////////
 
 uint64_t    GL_cycle_ = 0;
-Core        GL_cores_[N_THREADS];
+
+OS*             GL_os_;
+Core*           GL_cores_[N_THREADS];
+LLC2Controller* GL_llc_controller_;
+DS3Interface*   GL_memory_controller_;
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
 void print_sim_config(void);
-
 void print_progress(void);
 void print_announcement(std::string);
 
@@ -43,21 +45,17 @@ int main(int argc, char* argv[]) {
 
     std::string trace_file(argv[1]);
     std::string dsim_cfg(argv[2]);
-
-    OS* os = new OS(DRAM_SIZE_MB);
-    DS3Interface* ds3i = new DS3Interface(dsim_cfg);
-    CacheController<LLC>* llc_ctrl = new CacheController<LLC>(24);
-
+    /*
+     * Initialize global structures.
+     * */
     for (size_t i = 0; i < N_THREADS; i++) {
-        GL_cores_[i].os_ = os;
-        GL_cores_[i].llc_ctrl_ = llc_ctrl;
-        GL_cores_[i].set_trace_file(trace_file);
-        GL_cores_[i].coreid_ = i;
-        GL_cores_[i].fetch_width_ = 4;
+        GL_cores_[i] = new Core(i, 4);
+        GL_cores_[i]->set_trace_file(trace_file);
     }
+    GL_os_ = new OS(DRAM_SIZE_MB);
+    GL_llc_controller_ = new LLC2Controller;
+    GL_memory_controller_ = new DS3Interface(dsim_cfg);
 
-    llc_ctrl->ds3i_ = ds3i;
-    ds3i->llc_ctrl_ = llc_ctrl;
     /*
      * Start simulation.
      * */
@@ -83,7 +81,7 @@ int main(int argc, char* argv[]) {
             leap_op -= 1.0;
         } else {
             tt.start();
-            ds3i->mem_->ClockTick();
+            GL_memory_controller_->mem_->ClockTick();
             t_ns_spent_in_mem += tt.end();
 
             leap_op += DS3_CLK_SCALE;
@@ -91,12 +89,12 @@ int main(int argc, char* argv[]) {
 
         tt.start();
         
-        llc_ctrl->tick();
+        GL_llc_controller_->tick();
         size_t ii = first;
         for (size_t i = 0; i < N_THREADS; i++) {
-            Core& c = GL_cores_[ii];
-            c.tick();
-            all_done &= (c.finished_inst_num_ >= INST_SIM);
+            Core* c = GL_cores_[ii];
+            c->tick();
+            all_done &= (c->finished_inst_num_ >= INST_SIM);
             ii = INCREMENT_AND_MOD_BY_POW2(ii, N_THREADS);
         }
         first = INCREMENT_AND_MOD_BY_POW2(first, N_THREADS);
@@ -115,15 +113,18 @@ int main(int argc, char* argv[]) {
     std::cout << "\n";
 
     for (size_t i = 0; i < N_THREADS; i++) {
-        GL_cores_[i].print_stats(std::cout);
+        GL_cores_[i]->print_stats(std::cout);
     }
-    llc_ctrl->print_stats(std::cout, "LLC");
-    os->print_stats(std::cout);
-    ds3i->print_stats();
+    GL_os_->print_stats(std::cout);
+    GL_llc_controller_->print_stats(std::cout);
+    GL_memory_controller_->print_stats();
 
-    delete ds3i;
-    delete os;
-    delete llc_ctrl;
+    for (size_t i = 0; i < N_THREADS; i++) {
+        delete GL_cores_[i];
+    }
+    delete GL_os_;
+    delete GL_llc_controller_;
+    delete GL_memory_controller_;
 
     return 0;
 }
@@ -165,7 +166,7 @@ print_progress() {
     if (GL_cycle_ % 50'000'000 == 0) {
         std::cout << "\nCYCLE = " << std::setw(4) << std::right<< GL_cycle_/1'000'000 << "M [ INST:";
         for (size_t i = 0; i < N_THREADS; i++) {
-            std::cout << std::setw(6) << std::right << (GL_cores_[i].finished_inst_num_/1'000'000) << "M";
+            std::cout << std::setw(6) << std::right << (GL_cores_[i]->finished_inst_num_/1'000'000) << "M";
         }
         std::cout << " ]\n\tprogress: ";
     }

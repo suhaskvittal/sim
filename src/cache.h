@@ -11,17 +11,23 @@
 #include <array>
 #include <iostream>
 #include <unordered_map>
+#include <string_view>
 
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 /*
  * Basic cache data structures.
  * */
 struct CacheEntry {
     bool dirty_ =false;
     uint64_t lru_timestamp_;
+    uint8_t rrpv_;
 };
 
 using CacheSet = std::unordered_map<uint64_t, CacheEntry>;
 
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 /*
  * General class for caches. Replacement policy
  * is LRU.
@@ -31,8 +37,13 @@ class Cache {
 public:
     constexpr static size_t SETS = (SIZE_KB*1024)/(WAYS*LINESIZE);
 
-    uint64_t s_misses_ =0;
-    uint64_t s_accesses_ =0;
+    uint64_t s_read_misses_ =0;
+    uint64_t s_reads_ =0;
+    uint64_t s_write_misses_ =0;
+    uint64_t s_writes_ =0;
+
+    uint64_t s_write_uses_ =0;
+    uint64_t s_tot_write_use_dist_ =0;
 private:
     std::array<CacheSet, SETS> sets_;
 public:
@@ -45,10 +56,12 @@ public:
      * */
     CacheResult access(uint64_t lineaddr, bool is_write, uint64_t& victim_lineaddr);
 
+    bool probe(uint64_t);
+    
     void invalidate(uint64_t);
     void mark_dirty(uint64_t);
 
-    void print_stats(std::ostream&, std::string cache_name);
+    void print_stats(std::ostream&, std::string_view cache_name);
 private:
     /*
      * Searches for a victim within a set. This function assumes that
@@ -63,6 +76,9 @@ private:
     void     split_lineaddr(uint64_t, uint64_t& tag, uint64_t& set);
     uint64_t join_lineaddr(uint64_t tag, uint64_t set);
 };
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 /*
  * Cache Replacement Policies:
  *  All functions here must have the signature: CacheSet::iterator(CacheSet&).
@@ -71,8 +87,10 @@ private:
  * */
 CacheSet::iterator lru(CacheSet&);
 CacheSet::iterator rand(CacheSet&);
-CacheSet::iterator ssrip(CacheSet&);
-CacheSet::iterator lru_wb(CacheSet&);
+CacheSet::iterator srrip(CacheSet&);
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 
 #include "cache.tpp"
 

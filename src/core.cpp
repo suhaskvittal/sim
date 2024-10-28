@@ -4,7 +4,7 @@
  * */
 
 #include "core.h"
-#include "cache/controller.h"
+#include "cache/controller/llc2.h"
 #include "os.h"
 #include <iostream>
 
@@ -34,11 +34,11 @@ Core::tick() {
         rob_[robid] = { curr_inst_num_, GL_cycle_, GL_cycle_ };
         if (curr_inst_num_ >= next_inst_.num) {
             bool is_load = !next_inst_.is_wb;
-            uint64_t lineaddr = os_->v2p( next_inst_.vla );
+            uint64_t lineaddr = GL_os_->v2p( next_inst_.vla );
             if (is_load) { // Need to wait for access to finish.
                 rob_[robid].end_cycle_ = GL_cycle_ + BAD_LATENCY;
             }
-            int retval = llc_ctrl_->access(lineaddr, coreid_, robid, curr_inst_num_, is_load);
+            int retval = GL_llc_controller_->access(lineaddr, coreid_, robid, curr_inst_num_, is_load);
             if (retval == -1) {
                 ++s_mshr_full_;
                 return;

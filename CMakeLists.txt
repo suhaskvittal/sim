@@ -33,6 +33,7 @@ set(SIM_FILES
     src/core.cpp
     src/os.cpp
     src/cache/replacement.cpp
+    src/cache/controller/llc2.cpp
     src/ds3/interface.cpp
 )
 

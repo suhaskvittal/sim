@@ -14,13 +14,13 @@
 #include <stdint.h>
 #include <zlib.h>
 
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
 constexpr uint64_t BAD_LATENCY = 1'000'000;
 
-/*
- * Class declarations that appear in other files (avoid dependencies).
- * */
-class OS;
-template <class T> class CacheController;
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 
 struct ROBEntry {
     uint64_t inst_num_;
@@ -29,16 +29,16 @@ struct ROBEntry {
     uint64_t end_cycle_;
 };
 
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
 class Core {
 public:
     uint64_t curr_inst_num_ =0;
     uint64_t finished_inst_num_ =0;
-
-    OS* os_;
     /*
      * Microarchitectural structures.
      * */
-    CacheController<LLC>* llc_ctrl_;
     ROBEntry rob_[ROB_WIDTH];
 
     size_t rob_ptr_ =0;
@@ -91,8 +91,10 @@ public:
     void set_trace_file(std::string);
 private:
     void rob_retire(void);
-
     void read_next_inst(void);
 };
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 
 #endif  // CORE_h
