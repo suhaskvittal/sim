@@ -9,22 +9,38 @@
 #include "defs.h"
 
 #include <array>
+#include <deque>
 #include <iostream>
 #include <unordered_map>
 #include <string_view>
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
-/*
- * Basic cache data structures.
- * */
+
 struct CacheEntry {
     bool dirty_ =false;
     uint64_t lru_timestamp_;
     uint8_t rrpv_;
 };
 
-using CacheSet = std::unordered_map<uint64_t, CacheEntry>;
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+struct CacheSet : public std::unordered_map<uint64_t, CacheEntry> {
+    /*
+     * For use with Belady's min (OPT) replacement. Each key of the map
+     * is a physical address, and the values are a queue of instno.
+     * */
+    std::unordered_map<uint64_t, std::deque<uint64_t>> belady_access_stream_;
+    /*
+     * Cache Replacement Policies:
+     *  Defined in `cache/replacement.cpp`
+     * */
+    CacheSet::iterator lru(void);
+    CacheSet::iterator rand(void);
+    CacheSet::iterator srrip(void);
+    CacheSet::iterator belady(void);
+};
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -37,31 +53,27 @@ class Cache {
 public:
     constexpr static size_t SETS = (SIZE_KB*1024)/(WAYS*LINESIZE);
 
-    uint64_t s_read_misses_ =0;
-    uint64_t s_reads_ =0;
-    uint64_t s_write_misses_ =0;
-    uint64_t s_writes_ =0;
-
-    uint64_t s_write_uses_ =0;
-    uint64_t s_tot_write_use_dist_ =0;
+    uint64_t s_misses_ =0;
+    uint64_t s_accesses_ =0;
 private:
     std::array<CacheSet, SETS> sets_;
 public:
     Cache(void);
     /*
-     * Accesses the cache and installs the given `lineaddr` if it is not currently
-     * in the cache. If a line is evicted, then `victim_lineaddr` is populated.
-     *
-     * See `CacheResult` for the possible outcomes.
+     * Basic cache functions:
+     *  `probe`: returns true if the given line is in the cache.
+     *  `fill`: installs the given line into the cache. Returns true if `victim` needs to be written back.
+     *  `invalidate`: removes the given line if it exists.
+     *  `mark_dirty`: sets the dirty bit for the given line
      * */
-    CacheResult access(uint64_t lineaddr, bool is_write, uint64_t& victim_lineaddr);
-
     bool probe(uint64_t);
-    
+    bool fill(uint64_t, size_t num_mshr_refs, uint64_t& victim);
     void invalidate(uint64_t);
     void mark_dirty(uint64_t);
 
     void print_stats(std::ostream&, std::string_view cache_name);
+
+    void populate_sets_with_belady(std::string trace_file, size_t coreid, uint64_t inst_limit);
 private:
     /*
      * Searches for a victim within a set. This function assumes that
@@ -79,19 +91,10 @@ private:
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
-/*
- * Cache Replacement Policies:
- *  All functions here must have the signature: CacheSet::iterator(CacheSet&).
- *
- *  Defined in `cache/replacement.cpp`
- * */
-CacheSet::iterator lru(CacheSet&);
-CacheSet::iterator rand(CacheSet&);
-CacheSet::iterator srrip(CacheSet&);
-
-////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////
 
 #include "cache.tpp"
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 
 #endif  // CACHE_h

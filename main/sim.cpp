@@ -15,8 +15,13 @@
 
 #include <iostream>
 
-static const uint64_t   DRAM_SIZE_MB = 32*1024;
-static const double     DS3_CLK_SCALE = (4.0/2.4) - 1.0;
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+constexpr uint64_t  SEED = 12345678;
+
+constexpr uint64_t  DRAM_SIZE_MB = 32*1024;
+constexpr double    DS3_CLK_SCALE = (4.0/2.4) - 1.0;
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -27,6 +32,8 @@ OS*             GL_os_;
 Core*           GL_cores_[N_THREADS];
 LLC2Controller* GL_llc_controller_;
 DS3Interface*   GL_memory_controller_;
+
+std::mt19937_64 GL_RNG_(SEED);
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -71,6 +78,14 @@ int main(int argc, char* argv[]) {
     GL_os_ = new OS(DRAM_SIZE_MB);
     GL_llc_controller_ = new LLC2Controller;
     GL_memory_controller_ = new DS3Interface(OPT_ds3_cfg_);
+
+    if constexpr (LLC_REPL_POLICY == CacheReplPolicy::BELADY) {
+        for (size_t i = 0; i < N_THREADS; i++) {
+            GL_llc_controller_->cache_.populate_sets_with_belady(
+                    OPT_trace_file_, i, static_cast<uint64_t>(OPT_num_inst_*1.2));
+        }
+    }
+
     /*
      * Start simulation.
      * */

@@ -78,7 +78,7 @@ public:
     uint64_t s_num_write_use_ =0;
     uint64_t s_num_write_use_hits_ =0;
 protected:
-    std::unordered_map<uint64_t, MSHREntry> mshr_;
+    std::unordered_multimap<uint64_t, MSHREntry> mshr_;
     std::vector<std::tuple<uint64_t,bool>> bounced_requests_;
 
     std::unordered_map<uint64_t, uint64_t> write_use_cycle_map_;

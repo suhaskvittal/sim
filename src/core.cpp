@@ -169,7 +169,7 @@ Core::read_next_inst() {
     gzread( trace_in_, &next_inst_.is_wb, 1 );
     gzread( trace_in_, &next_inst_.vla, 4);
 #endif
-    next_inst_.vla |= static_cast<uint64_t>(coreid_) << (36+Log2<LINES_PER_PAGE>::value);
+    TAG_VA_WITH_COREID(next_inst_.vla, coreid_);
 }
 
 ////////////////////////////////////////////////////////////////

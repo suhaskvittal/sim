@@ -28,7 +28,8 @@ __TEMPLATE_CLASS__::tick() {
         const auto& [lineaddr, is_load] = *it;
         int retval;
         if (is_load) {
-            MSHREntry& e = mshr_.at(lineaddr);
+            // There is only one entry for `lineaddr` in the MSHR.
+            MSHREntry& e = mshr_.find(lineaddr)->second;
             retval = __CALL_CHILD__(access_next_level(lineaddr, e.coreid_, e.robid_, e.inst_num_, true) );
         } else {
             retval = __CALL_CHILD__(access_next_level(lineaddr, 0, 0, 0, false));
@@ -44,35 +45,24 @@ __TEMPLATE_CLASS__::tick() {
 
 __TEMPLATE_HEADER__ int
 __TEMPLATE_CLASS__::access(uint64_t lineaddr, size_t coreid, size_t robid, uint64_t inst_num, bool is_load) {
-    // Early exit condition: must have space in `mshr_`.
-    if (is_load && mshr_.size() == IMPL::MSHR_SIZE) return -1;
-    // NOTE: does not handle case where `lineaddr` is currently in the MSHR and we want to do a load. This does
-    // not matter in simulation as this new access can only finish when the existing access finishes. So, we
-    // can just treat this as a cache hit.
-
-    uint64_t vic;
-    CacheResult r = cache_.access(lineaddr, !is_load, vic);
-    if (r == CacheResult::HIT) {
-        if constexpr (IMPL::CACHE_HIT_POLICY == CacheHitPolicy::INVALIDATE) {
-            cache_.invalidate(lineaddr);
-        }
-        // Perform updates if necessary.
-        if (is_load) {
+    ++access_ctr_;
+    if (is_load) {
+        if (cache_.probe(lineaddr)) {
+            if constexpr (IMPL::CACHE_HIT_POLICY == CacheHitPolicy::INVALIDATE) {
+                cache_.invalidate(lineaddr);
+            }
             __CALL_CHILD__(update_prev_level(lineaddr, coreid, robid, GL_cycle_ + IMPL::CACHE_LATENCY));
+            return true;
         } else {
-            write_use_cycle_map_[lineaddr] = access_ctr_;
+            if (mshr_.size() == IMPL::MSHR_SIZE) return -1;
+            add_mshr_entry(lineaddr, coreid, robid, inst_num);
+            return false;
         }
     } else {
-        if (is_load) add_mshr_entry(lineaddr, coreid, robid, inst_num);
-
-        if ( r == CacheResult::MISS_WITH_WB
-            && __CALL_CHILD__(access_next_level(vic, 0, 0, 0, false)) == -1 )
-        {
-            bounced_requests_.emplace_back(vic, false);
-        }
+        cache_.mark_dirty(lineaddr);
+        write_use_cycle_map_[lineaddr] = access_ctr_;
+        return true;
     }
-    ++access_ctr_;
-    return (r==CacheResult::HIT) ? 1 : 0;
 }
 
 ////////////////////////////////////////////////////////////////
@@ -80,14 +70,26 @@ __TEMPLATE_CLASS__::access(uint64_t lineaddr, size_t coreid, size_t robid, uint6
 
 __TEMPLATE_HEADER__ void
 __TEMPLATE_CLASS__::mark_as_finished(uint64_t lineaddr) {
-    auto it = mshr_.find(lineaddr);
-    MSHREntry& e = it->second;
-    __CALL_CHILD__(
-            update_prev_level(lineaddr, e.coreid_, e.robid_, GL_cycle_ - e.cycle_fired_ + IMPL::CACHE_LATENCY));
-    mshr_.erase(it);
+    // Install the line into the cache.
+    uint64_t vic;
+    if (cache_.fill(lineaddr, mshr_.count(lineaddr), vic)) {
+        // Need to writeback `vic`
+        if (__CALL_CHILD__(access_next_level(vic, 0, 0, 0, false)) == -1) {
+            bounced_requests_.emplace_back(vic, false);
+        }
+    }
 
-    ++s_num_delays_;
-    s_tot_delay_ += GL_cycle_ - e.cycle_fired_;
+    while (mshr_.count(lineaddr) > 0) {
+        auto it = mshr_.find(lineaddr);
+        // Alert upper levels of the hierarchy.
+        MSHREntry& e = it->second;
+        __CALL_CHILD__(
+                update_prev_level(lineaddr, e.coreid_, e.robid_, GL_cycle_ - e.cycle_fired_ + IMPL::CACHE_LATENCY));
+        mshr_.erase(it);
+        // Update stats.
+        ++s_num_delays_;
+        s_tot_delay_ += GL_cycle_ - e.cycle_fired_;
+    }
 }
 
 ////////////////////////////////////////////////////////////////
@@ -113,12 +115,13 @@ __TEMPLATE_CLASS__::print_stats(std::ostream& out) {
 
 __TEMPLATE_HEADER__ void
 __TEMPLATE_CLASS__::add_mshr_entry(uint64_t lineaddr, size_t coreid, size_t robid, uint64_t inst_num) {
-    MSHREntry e(coreid, robid, inst_num);
-    mshr_[lineaddr] = e;
-    // Send command to DRAM.
-    if (__CALL_CHILD__(access_next_level(lineaddr, coreid, robid, inst_num, true)) == -1) {
-        bounced_requests_.emplace_back(lineaddr, true);
+    if (mshr_.count(lineaddr) == 0) {
+        // Send command to DRAM.
+        if (__CALL_CHILD__(access_next_level(lineaddr, coreid, robid, inst_num, true)) == -1) {
+            bounced_requests_.emplace_back(lineaddr, true);
+        }
     }
+    mshr_.insert({ lineaddr, MSHREntry(coreid, robid, inst_num) });
 }
 
 ////////////////////////////////////////////////////////////////
