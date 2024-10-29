@@ -10,12 +10,12 @@
 #include <ds3/interface.h>
 #include <os.h>
 
+#include <utils/argparse.h>
 #include <utils/timer.h>
 
 #include <iostream>
 
 static const uint64_t   DRAM_SIZE_MB = 32*1024;
-static const uint64_t   INST_SIM = 100'000'000;
 static const double     DS3_CLK_SCALE = (4.0/2.4) - 1.0;
 
 ////////////////////////////////////////////////////////////////
@@ -38,24 +38,39 @@ void print_announcement(std::string);
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
+std::string OPT_trace_file_;
+std::string OPT_ds3_cfg_;
+uint64_t OPT_num_inst_;
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
 int main(int argc, char* argv[]) {
-    print_sim_config();
-
     std::ios_base::sync_with_stdio(false);
-
-    std::string trace_file(argv[1]);
-    std::string dsim_cfg(argv[2]);
+    /*
+     * Parse arguments:
+     * */
+    ArgParseResult ARGS = parse(argc, argv,
+            { // REQUIRED
+                "trace",
+            },
+            { // OPTIONAL
+                { "ds3cfg", "DRAMSim3 config file (*.ini)", "../../ds3conf/base.ini" },
+                { "inst", "Number of instructions to simulate", "10000000" }
+            });
+    ARGS("trace", OPT_trace_file_);
+    ARGS("ds3cfg", OPT_ds3_cfg_);
+    ARGS("inst", OPT_num_inst_);
     /*
      * Initialize global structures.
      * */
     for (size_t i = 0; i < N_THREADS; i++) {
         GL_cores_[i] = new Core(i, 4);
-        GL_cores_[i]->set_trace_file(trace_file);
+        GL_cores_[i]->set_trace_file(OPT_trace_file_);
     }
     GL_os_ = new OS(DRAM_SIZE_MB);
     GL_llc_controller_ = new LLC2Controller;
-    GL_memory_controller_ = new DS3Interface(dsim_cfg);
-
+    GL_memory_controller_ = new DS3Interface(OPT_ds3_cfg_);
     /*
      * Start simulation.
      * */
@@ -63,6 +78,7 @@ int main(int argc, char* argv[]) {
     size_t first = 0;
     double leap_op = 0.0;
 
+    print_sim_config();
     print_announcement("SIMULATION START");
 
     uint64_t t_ns_spent_in_core = 0,
@@ -94,7 +110,7 @@ int main(int argc, char* argv[]) {
         for (size_t i = 0; i < N_THREADS; i++) {
             Core* c = GL_cores_[ii];
             c->tick();
-            all_done &= (c->finished_inst_num_ >= INST_SIM);
+            all_done &= (c->finished_inst_num_ >= OPT_num_inst_);
             ii = INCREMENT_AND_MOD_BY_POW2(ii, N_THREADS);
         }
         first = INCREMENT_AND_MOD_BY_POW2(first, N_THREADS);
@@ -141,6 +157,12 @@ void
 print_sim_config() {
     std::cout << "\n---------------------------------------------\n\n";
 
+    list("TRACE", OPT_trace_file_);
+    list("DS3CFG", OPT_ds3_cfg_);
+    list("INST", FMT_BIGNUM(OPT_num_inst_));
+
+    std::cout << "\n---------------------------------------------\n\n";
+
     list("N_THREADS", N_THREADS);
 
     std::cout << "\n---------------------------------------------\n\n";
@@ -164,9 +186,9 @@ print_sim_config() {
 void 
 print_progress() {
     if (GL_cycle_ % 50'000'000 == 0) {
-        std::cout << "\nCYCLE = " << std::setw(4) << std::right<< GL_cycle_/1'000'000 << "M [ INST:";
+        std::cout << "\nCYCLE = " << std::setw(4) << std::left << FMT_BIGNUM(GL_cycle_) << " [ INST:";
         for (size_t i = 0; i < N_THREADS; i++) {
-            std::cout << std::setw(6) << std::right << (GL_cores_[i]->finished_inst_num_/1'000'000) << "M";
+            std::cout << std::setw(7) << std::right << FMT_BIGNUM(GL_cores_[i]->finished_inst_num_);
         }
         std::cout << " ]\n\tprogress: ";
     }

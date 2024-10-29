@@ -19,24 +19,22 @@
 ////////////////////////////////////////////////////////////////
 
 struct MSHREntry {
+    uint8_t  coreid_;
+    uint16_t robid_;
+    uint64_t inst_num_;
+    /*
+     * Stats for miss penalty computation.
+     * */
+    uint64_t cycle_fired_;
+
     MSHREntry(void) =default;
     MSHREntry(const MSHREntry&) =default;
-
     MSHREntry(size_t coreid, size_t robid, uint64_t inst_num)
         :coreid_( static_cast<uint8_t>(coreid) ),
         robid_( static_cast<uint16_t>(robid) ),
         inst_num_(inst_num),
         cycle_fired_(GL_cycle_)
     {}
-
-    uint8_t  coreid_;
-    uint16_t robid_;
-    uint32_t cum_delay_ =0;
-    uint64_t inst_num_;
-    /*
-     * Stats for miss penalty computation.
-     * */
-    uint64_t cycle_fired_;
 };
 
 ////////////////////////////////////////////////////////////////

@@ -9,8 +9,8 @@
 ////////////////////////////////////////////////////////////////
 
 void
-LLC2Controller::update_prev_level(uint64_t lineaddr, size_t coreid, size_t robid, uint64_t latency) {
-    GL_cores_[coreid]->rob_[robid].end_cycle_ = GL_cycle_ + latency;
+LLC2Controller::update_prev_level(uint64_t lineaddr, size_t coreid, size_t robid, uint64_t when) {
+    GL_cores_[coreid]->rob_[robid].end_cycle_ = when;
 }
 
 ////////////////////////////////////////////////////////////////

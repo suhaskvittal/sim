@@ -35,6 +35,7 @@ set(SIM_FILES
     src/cache/replacement.cpp
     src/cache/controller/llc2.cpp
     src/ds3/interface.cpp
+    src/utils/argparse.cpp
 )
 
 find_package(ZLIB)

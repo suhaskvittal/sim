@@ -102,6 +102,21 @@ inline void PRINT_STAT(std::ostream& out, std::string_view header, std::string n
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
+inline std::string FMT_BIGNUM(uint64_t num) {
+    std::string suffix;
+    if (num < 1'000'000'000) {
+        num /= 1'000'000;
+        suffix = "M";
+    } else {
+        num /= 1'000'000'000;
+        suffix = "B";
+    }
+    return std::to_string(num) + suffix;
+}
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
 #define INCREMENT_AND_MOD(x,mod)            ((++(x))==(mod)) ? 0 : (x)
 #define INCREMENT_AND_MOD_BY_POW2(x,mod)    (((x)+1) & ((mod)-1))
 

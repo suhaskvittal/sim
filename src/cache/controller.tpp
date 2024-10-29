@@ -58,7 +58,7 @@ __TEMPLATE_CLASS__::access(uint64_t lineaddr, size_t coreid, size_t robid, uint6
         }
         // Perform updates if necessary.
         if (is_load) {
-            __CALL_CHILD__(update_prev_level(lineaddr, coreid, robid, IMPL::CACHE_LATENCY));
+            __CALL_CHILD__(update_prev_level(lineaddr, coreid, robid, GL_cycle_ + IMPL::CACHE_LATENCY));
         } else {
             write_use_cycle_map_[lineaddr] = access_ctr_;
         }
