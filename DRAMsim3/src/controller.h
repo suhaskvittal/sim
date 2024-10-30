@@ -59,6 +59,9 @@ class Controller {
     TransQueue read_queue_;
     TransQueue write_buffer_;
 
+    uint64_t clk_last_write_drain_ =0;
+    uint64_t clk_last_opp_write_drain_ =0;
+
     // transactions that are not completed, use map for convenience
     std::multimap<uint64_t, Transaction> pending_rd_q_;
     std::multimap<uint64_t, Transaction> pending_wr_q_;

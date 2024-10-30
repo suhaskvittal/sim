@@ -18,7 +18,7 @@ LLC2Controller::update_prev_level(uint64_t lineaddr, size_t coreid, size_t robid
 
 int
 LLC2Controller::access_next_level(uint64_t lineaddr, size_t coreid, size_t robid, uint64_t inst_num, bool is_load) {
-    return GL_memory_controller_->make_request(lineaddr, is_load) ? 1 : 0;
+    return GL_memory_controller_->make_request(lineaddr, is_load) ? 1 : -1;
 }
 
 ////////////////////////////////////////////////////////////////

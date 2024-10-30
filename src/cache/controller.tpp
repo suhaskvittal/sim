@@ -34,7 +34,7 @@ __TEMPLATE_CLASS__::tick() {
         } else {
             retval = __CALL_CHILD__(access_next_level(lineaddr, 0, 0, 0, false));
         }
-        if (retval == -1) it = bounced_requests_.erase(it);
+        if (retval >= 0)  it = bounced_requests_.erase(it);
         else              ++it;
     }
     __CALL_CHILD__( _tick() );
@@ -47,21 +47,42 @@ __TEMPLATE_HEADER__ int
 __TEMPLATE_CLASS__::access(uint64_t lineaddr, size_t coreid, size_t robid, uint64_t inst_num, bool is_load) {
     ++access_ctr_;
     if (is_load) {
+        int retval;
         if (cache_.probe(lineaddr)) {
+            if (write_use_cycle_map_.count(lineaddr)) {
+                ++s_num_write_use_hits_;
+            }
+
             if constexpr (IMPL::CACHE_HIT_POLICY == CacheHitPolicy::INVALIDATE) {
                 cache_.invalidate(lineaddr);
             }
             __CALL_CHILD__(update_prev_level(lineaddr, coreid, robid, GL_cycle_ + IMPL::CACHE_LATENCY));
-            return true;
+            retval = 1;
         } else {
             if (mshr_.size() == IMPL::MSHR_SIZE) return -1;
             add_mshr_entry(lineaddr, coreid, robid, inst_num);
-            return false;
+            retval = 0;
         }
+
+        if (write_use_cycle_map_.count(lineaddr)) {
+            s_tot_write_use_dist_ += access_ctr_ - write_use_cycle_map_[lineaddr];
+            ++s_num_write_use_;
+            s_num_write_use_hits_ += retval;
+            write_use_cycle_map_.erase(lineaddr);
+        }
+        return retval;
     } else {
-        cache_.mark_dirty(lineaddr);
+        if (!cache_.mark_dirty(lineaddr)) {
+            uint64_t vic;
+            if (cache_.fill(lineaddr, 1, vic)) {
+                if (__CALL_CHILD__(access_next_level(vic, 0, 0, 0, false)) == -1) {
+                    bounced_requests_.emplace_back(vic, false);
+                }
+            }
+            cache_.mark_dirty(lineaddr);
+        }
         write_use_cycle_map_[lineaddr] = access_ctr_;
-        return true;
+        return 1;
     }
 }
 

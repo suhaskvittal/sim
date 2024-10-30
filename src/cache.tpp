@@ -50,17 +50,18 @@ __TEMPLATE_CLASS__::probe(uint64_t lineaddr) {
     }
     // Check access.
     auto it = s.find(t);
-    if (it == s.end()) {
+    if (it != s.end()) {
+        // On hit: update metadata
+        if constexpr (POL == CacheReplPolicy::LRU) {
+            it->second.lru_timestamp_ = GL_cycle_;
+        } else if constexpr (POL == CacheReplPolicy::SRRIP || POL == CacheReplPolicy::BRRIP) {
+            it->second.rrpv_ = SRRIP_MAX;
+        }
+        return true;
+    } else {
         ++s_misses_;
         return false;
     }
-    // On hit: update metadata
-    if constexpr (POL == CacheReplPolicy::LRU) {
-        it->second.lru_timestamp_ = GL_cycle_;
-    } else if constexpr (POL == CacheReplPolicy::SRRIP || POL == CacheReplPolicy::BRRIP) {
-        it->second.rrpv_ = SRRIP_MAX;
-    }
-    return true;
 }
 
 __TEMPLATE_HEADER__ bool
@@ -72,7 +73,7 @@ __TEMPLATE_CLASS__::fill(uint64_t lineaddr, size_t num_mshr_refs, uint64_t& vic)
     bool is_wb = false;
     if (s.size() >= W) {
         auto it = select_victim(s);
-        vic = it->first;
+        vic = join_lineaddr(it->first, k);
         is_wb = it->second.dirty_;
         s.erase(it);
     }
@@ -93,7 +94,7 @@ __TEMPLATE_CLASS__::fill(uint64_t lineaddr, size_t num_mshr_refs, uint64_t& vic)
     return is_wb;
 }
 
-__TEMPLATE_HEADER__ inline void
+__TEMPLATE_HEADER__ bool
 __TEMPLATE_CLASS__::mark_dirty(uint64_t lineaddr) {
     uint64_t t, k;
     split_lineaddr(lineaddr, t, k);
@@ -102,6 +103,9 @@ __TEMPLATE_CLASS__::mark_dirty(uint64_t lineaddr) {
     auto it = s.find(t);
     if (it != s.end()) {
         it->second.dirty_ = true;
+        return true;
+    } else {
+        return false;
     }
 }
 

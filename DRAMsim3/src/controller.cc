@@ -199,8 +199,21 @@ void Controller::ScheduleTransaction() {
     if (write_draining_ == 0 && !is_unified_queue_) {
         // we basically have a upper and lower threshold for write buffer
         if ((write_buffer_.size() >= write_buffer_.capacity()) ||
-            (write_buffer_.size() > 8 && cmd_queue_.QueueEmpty())) {
+            (write_buffer_.size() > 8 && cmd_queue_.QueueEmpty())) 
+        {
             write_draining_ = write_buffer_.size();
+
+            simple_stats_.Increment("num_write_drains");
+            simple_stats_.AddValue("t_btwn_write_drains", clk_ - clk_last_write_drain_);
+            clk_last_write_drain_ = clk_;
+            if (cmd_queue_.QueueEmpty()) {
+                simple_stats_.Increment("num_opp_write_drains");
+                if (clk_ > 10'000'000) {
+                    simple_stats_.Increment("num_opp_write_drains_post_10M");
+                }
+                simple_stats_.AddValue("t_btwn_opp_write_drains", clk_ - clk_last_opp_write_drain_);
+                clk_last_opp_write_drain_ = clk_;
+            }
         }
     }
 

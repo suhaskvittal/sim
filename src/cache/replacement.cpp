@@ -48,6 +48,24 @@ CacheSet::srrip() {
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
+CacheSet::iterator
+CacheSet::prowb() {
+    auto v_it = lru();
+    if (v_it->second.dirty_) {
+        for (auto it = begin(); it != end(); it++) {
+            if (!it->second.dirty_
+                && (v_it->second.dirty_ || it->second.lru_timestamp_ < v_it->second.lru_timestamp_))
+            {
+                v_it = it;
+            }
+        }
+    }
+    return v_it;
+}
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
 inline uint64_t
 _next(const std::deque<uint64_t>& q) {
     return q.empty() ? std::numeric_limits<uint64_t>::max() : q.front();

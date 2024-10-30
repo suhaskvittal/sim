@@ -42,6 +42,7 @@ struct CacheSet : public std::unordered_map<uint64_t, CacheEntry> {
     CacheSet::iterator rand(void);
     CacheSet::iterator srrip(void);
     CacheSet::iterator belady(void);
+    CacheSet::iterator prowb(void);
 
     inline bool 
     any_belady_stream_empty() {
@@ -82,7 +83,7 @@ public:
     bool probe(uint64_t);
     bool fill(uint64_t, size_t num_mshr_refs, uint64_t& victim);
     void invalidate(uint64_t);
-    void mark_dirty(uint64_t);
+    bool mark_dirty(uint64_t);
 
     void print_stats(std::ostream&, std::string_view cache_name);
 

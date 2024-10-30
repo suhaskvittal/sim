@@ -75,6 +75,16 @@ SimpleStats::SimpleStats(const Config& config, int channel_id)
     InitHistoStat("write_latency", "Write cmd latency (cycles)", 0, 200, 10);
     InitHistoStat("interarrival_latency", "Request interarrival latency (cycles)", 0, 100, 10);
 
+    InitStat("num_write_drains", "counter", "Number of write drains");
+    InitStat("num_opp_write_drains", "counter", "Number of opportunistic write drains");
+    InitStat("num_opp_write_drains_post_10M", "counter", "Number of opportunistic write drains after 10M cycles");
+
+    InitHistoStat("t_btwn_write_drains", "Time between write drains (cycles)", 0, 10000, 10);
+    InitHistoStat("t_btwn_opp_write_drains", "Time between opp. write drains (cycles)", 0, 10000, 10);
+
+    InitStat("mean_t_btwn_write_drains", "calculated", "Average time between write drains");
+    InitStat("mean_t_btwn_opp_write_drains", "calculated", "Average time between opportunistic write drains");
+
     // some irregular stats
     InitStat("average_bandwidth", "calculated", "Average bandwidth");
     InitStat("total_energy", "calculated", "Total energy (pJ)");
@@ -428,6 +438,9 @@ void SimpleStats::UpdateEpochStats() {
     calculated_["average_interarrival"] =
         GetHistoAvg(epoch_histo_counts_.at("interarrival_latency"));
 
+    calculated_["mean_t_btwn_write_drains"] = GetHistoAvg(epoch_histo_counts_.at("t_btwn_write_drains"));
+    calculated_["mean_t_btwn_opp_write_drains"] = GetHistoAvg(epoch_histo_counts_.at("t_btwn_opp_write_drains"));
+
     UpdatePrints(true);
     for (auto& it : epoch_counters_) {
         it.second = 0;
@@ -489,6 +502,9 @@ void SimpleStats::UpdateFinalStats() {
         GetHistoAvg(histo_counts_.at("read_latency"));
     calculated_["average_interarrival"] =
         GetHistoAvg(histo_counts_.at("interarrival_latency"));
+
+    calculated_["mean_t_btwn_write_drains"] = GetHistoAvg(epoch_histo_counts_.at("t_btwn_write_drains"));
+    calculated_["mean_t_btwn_opp_write_drains"] = GetHistoAvg(epoch_histo_counts_.at("t_btwn_opp_write_drains"));
 
     UpdatePrints(false);
     return;

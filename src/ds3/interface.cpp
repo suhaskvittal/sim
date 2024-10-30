@@ -11,7 +11,7 @@
 ////////////////////////////////////////////////////////////////
 
 DS3Interface::DS3Interface(std::string ds3conf) {
-    mem_ = ds3::GetMemorySystem( ds3conf, ".",
+    mem_ = ds3::GetMemorySystem(ds3conf, ".",
             [this] (uint64_t byteaddr)
             {
                 uint64_t lineaddr = byteaddr >> Log2<LINESIZE>::value;
