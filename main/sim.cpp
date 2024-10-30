@@ -81,8 +81,9 @@ int main(int argc, char* argv[]) {
 
     if constexpr (LLC_REPL_POLICY == CacheReplPolicy::BELADY) {
         for (size_t i = 0; i < N_THREADS; i++) {
-            GL_llc_controller_->cache_.populate_sets_with_belady(
-                    OPT_trace_file_, i, static_cast<uint64_t>(OPT_num_inst_*1.2));
+            GL_llc_controller_->cache_.set_belady_trace_file(OPT_trace_file_, i);
+            // Get first 1M instructions.
+            GL_llc_controller_->cache_.populate_sets_with_belady(i, 1'000'000);
         }
     }
 

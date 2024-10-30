@@ -17,11 +17,13 @@ TRACES = [
     'tc',
 ]
 
+INST = 100_000_000
+
 jobs = 0
 for tr in TRACES:
     cmd = f'cd builds\n'
     for b in builds:
-        cmd += f'./{b}/sim {TRACE_FOLDER}/{tr}.mtf.gz ../ds3conf/base.ini > ../out/{tr}_{b}.out 2>&1 &\n'
+        cmd += f'./{b}/sim {TRACE_FOLDER}/{tr}.mtf.gz -ds3cfg ../ds3conf/base.ini -inst {INST} > ../out/{tr}_{b}.out 2>&1 &\n'
     print(cmd)
     os.system(cmd)
     jobs += len(builds)

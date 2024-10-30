@@ -79,8 +79,8 @@ private:
         char linedata[64];
     } trace_wb_data_;
 public:
-    Core(void);
     Core(size_t coreid, size_t fetch_width);
+    ~Core(void);
 
     void tick(void);
     void print_stats(std::ostream&);

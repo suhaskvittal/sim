@@ -3,7 +3,8 @@ project(MemSim2 VERSION 0.1)
 
 if (CMAKE_BUILD_TYPE MATCHES "Release")
     set(COMPILE_OPTIONS
-        -O3
+        -Ofast
+        -flto=auto
         -fno-strict-aliasing
         -Wno-deprecated
         -Wno-unknown-warming-option

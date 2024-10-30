@@ -31,7 +31,7 @@ repl_policy_name(CacheReplPolicy p) {
     if (p == CacheReplPolicy::RAND)     return "Random";
     if (p == CacheReplPolicy::SRRIP)    return "Static Re-Reference Interval Prediction";
     if (p == CacheReplPolicy::BRRIP)    return "Bimodal Re-Reference Interval Prediction";
-    if (p == CacheReplPolicy::BELADY)   return "Belady's min";
+    if (p == CacheReplPolicy::BELADY)   return "Belady's Min (OPT)";
     return "Unknown Cache Policy";
 }
 
