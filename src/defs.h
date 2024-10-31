@@ -34,6 +34,18 @@ repl_policy_name(CacheReplPolicy p) {
     return "Unknown Cache Policy";
 }
 
+enum class DRAMPagePolicy { OPEN, CLOSED };
+enum class DRAMRefreshMethod { REFAB, REFSB };
+enum class DRAMCommandType {
+    READ, 
+    WRITE,
+    ACTIVATE,
+    PRECHARGE,
+    READ_PRECHARGE,
+    WRITE_PRECHARGE,
+    REFRESH
+};
+
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 /*
@@ -62,12 +74,49 @@ constexpr size_t SRRIP_WIDTH = 3;
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 /*
+ * DRAM definitions.
+ * */
+
+constexpr DRAMPagePolicy    DRAM_PAGE_POLICY = DRAMPagePolicy::OPEN;
+constexpr DRAMRefreshMethod DRAM_REFRESH = DRAMRefreshMethod::REFAB;
+/*
+ * Note on below constants: -- they are for an x4 32GB single channel system.
+ *  `NUM_SUBCHANNELS` is per channel
+ *  `NUM_BANKGROUPS` is per rank
+ *  `NUM_BANKS` is per bankgroup.
+ *  (etc.)
+ *
+ *  `COLUMN_WIDTH` is also the bus width for a subchannel.
+ *
+ *  `RANK_SIZE_MB` and `NUM_RANKS` are determined by the other parameters.
+ * */
+constexpr size_t NUM_CHANNELS = 1;
+constexpr size_t NUM_SUBCHANNELS = 2;
+constexpr size_t NUM_BANKGROUPS = 8;
+constexpr size_t NUM_BANKS = 4;
+constexpr size_t NUM_ROWS = 1L << 16;
+constexpr size_t NUM_COLUMNS = 2048;
+
+constexpr size_t COLUMN_WIDTH = 32;
+
+constexpr size_t CHANNEL_SIZE_MB = 1L << 15;
+constexpr size_t SUBCHANNEL_SIZE_MB = CHANNEL_SIZE_MB / NUM_SUBCHANNELS;
+constexpr size_t BANK_SIZE_MB = NUM_ROWS * (NUM_COLUMNS * COLUMN_WIDTH)/8;
+
+constexpr size_t RANK_SIZE_MB = SUBCHANNEL_SIZE_MB / (BANK_SIZE_MB * NUM_BANKS * NUM_BANKGROUPS);
+constexpr size_t NUM_RANKS = SUBCHANNEL_SIZE_MB/RANK_SIZE_MB;
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+/*
  * Other constants.
  * */
 constexpr size_t ROB_WIDTH = 256;
 constexpr size_t OS_PAGESIZE = 4096;
 constexpr size_t LINESIZE = 64;
 constexpr size_t LINES_PER_PAGE = OS_PAGESIZE / LINESIZE;
+
+constexpr size_t BURST_LENGTH = LINESIZE / COLUMN_WIDTH;
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -81,6 +130,7 @@ class DS3Interface;
 ////////////////////////////////////////////////////////////////
 
 extern uint64_t         GL_cycle_;
+extern uint64_t         GL_dram_cycle_;
 
 extern OS*              GL_os_;
 extern Core*            GL_cores_[N_THREADS];
@@ -128,6 +178,8 @@ std::string FMT_BIGNUM(uint64_t num) {
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
+
+#define MOD_BY_POW2(x,mod)  ((x) & ((mod)-1))
 
 #define INCREMENT_AND_MOD(x,mod)            ((++(x))==(mod)) ? 0 : (x)
 #define INCREMENT_AND_MOD_BY_POW2(x,mod)    (((x)+1) & ((mod)-1))

@@ -60,12 +60,9 @@ struct DRAMConfig {
     size_t CWL;
 
     size_t tCCD_L;
-    size_t tCCD_M;
     size_t tCCD_L_WR; 
-    size_t tCCD_M_WR;
     size_t tCCD_L_RTW;
     size_t tCCD_L_WTR;
-    size_t tCCD_M_WTR;
     size_t tCCD_S;
     size_t tCCD_S_WR;
     size_t tCCD_S_RTW;

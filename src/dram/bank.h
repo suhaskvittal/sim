@@ -6,13 +6,13 @@
 #ifndef DRAM_BANK_h
 #define DRAM_BANK_h
 
+#include "defs.h"
 #include "dram/config.h"
 
-#include <vector>
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 
-class DRAMBank {
-public:
-    constexpr static size_t REF_GROUP_SIZE = 8192;
+struct DRAMBank {
     /*
      * `open_row_ == -1` means no row is in the global row buffer.
      * */
@@ -21,14 +21,21 @@ public:
     uint64_t s_row_buf_misses_ =0;
     uint64_t s_row_buf_accesses_ =0;
 
-    const DRAMConfig& conf_;
-private:
+    uint64_t busy_with_ref_until_dram_cycle_ =0;
     /*
-     * Refresh tracking: every tREFI, a group of 8K rows are refreshed. When
-     * this occurs, the bank is blocked for tRFC.
+     * Timing constraint handling:
+     *  `next_precharge_ok_cycle_` is tRAS after an ACT
+     *  `next_activate_ok_cycle_` is tRP after a PRE
+     *  `next_column_access_ok_cycle_` is tRCD after an ACT
+     *
+     * Note that there are other rank level constraints (see `rank.h`).
      * */
-    size_t num_refresh_groups_;
-    size_t curr_refresh_group_ =0;
+    uint64_t next_precharge_ok_cycle_       =0;
+    uint64_t next_activate_ok_cycle_        =0;
+    uint64_t next_column_access_ok_cycle_   =0;
 };
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
 
 #endif  // DRAM_BANK_h
