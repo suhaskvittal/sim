@@ -62,13 +62,17 @@ if (THERMAL)
 endif (THERMAL)
 
 if (CMD_TRACE)
-    target_compile_options(dramsim3 PRIVATE -DCMD_TRACE)
-endif (CMD_TRACE)
+    target_compile_definitions(dramsim3 PRIVATE -DCMD_TRACE)
+endif()
 
 if (ADDR_TRACE)
-    target_compile_options(dramsim3 PRIVATE -DADDR_TRACE)
-endif (ADDR_TRACE)
+    target_compile_definitions(dramsim3 PRIVATE -DADDR_TRACE)
+endif()
 
+if (WB_HAS_INF_CAPACITY)
+    message("Enabled WB_HAS_INF_CAPACITY")
+    target_compile_definitions(dramsim3 PRIVATE -DWB_HAS_INF_CAPACITY)
+endif()
 
 target_include_directories(dramsim3 INTERFACE src)
 target_compile_options(dramsim3 PRIVATE -Wall)
@@ -79,3 +83,4 @@ set_target_properties(dramsim3 PROPERTIES
     CXX_STANDARD_REQUIRED YES
     CXX_EXTENSIONS NO
 )
+

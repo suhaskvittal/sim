@@ -29,11 +29,12 @@ struct CacheEntry {
 ////////////////////////////////////////////////////////////////
 
 struct CacheSet : public std::unordered_map<uint64_t, CacheEntry> {
+#ifdef IMPLEMENT_LRU_WITH_FIFO
     /*
-     * For use with Belady's min (OPT) replacement. Each key of the map
-     * is a physical address, and the values are a queue of instno.
+     * A fifo of tags.
      * */
-    std::unordered_map<uint64_t, std::deque<uint64_t>> belady_access_stream_;
+    std::deque<uint64_t> lru_fifo_;
+#endif
     /*
      * Cache Replacement Policies:
      *  Defined in `cache/replacement.cpp`
@@ -41,16 +42,7 @@ struct CacheSet : public std::unordered_map<uint64_t, CacheEntry> {
     CacheSet::iterator lru(void);
     CacheSet::iterator rand(void);
     CacheSet::iterator srrip(void);
-    CacheSet::iterator belady(void);
     CacheSet::iterator prowb(void);
-
-    inline bool 
-    any_belady_stream_empty() {
-        for (auto it = belady_access_stream_.begin(); it != belady_access_stream_.end(); it++) {
-            if (it->second.empty()) return true;
-        }
-        return false;
-    }
 };
 
 ////////////////////////////////////////////////////////////////
@@ -68,11 +60,8 @@ public:
     uint64_t s_accesses_ =0;
 private:
     std::array<CacheSet, SETS> sets_;
-
-    gzFile belady_trace_in_[N_THREADS];
 public:
     Cache(void);
-    ~Cache(void);
     /*
      * Basic cache functions:
      *  `probe`: returns true if the given line is in the cache.
@@ -86,9 +75,6 @@ public:
     bool mark_dirty(uint64_t);
 
     void print_stats(std::ostream&, std::string_view cache_name);
-
-    void set_belady_trace_file(std::string trace_file, size_t coreid);
-    void populate_sets_with_belady(size_t coreid, uint64_t inst_limit);
 private:
     /*
      * Searches for a victim within a set. This function assumes that
@@ -102,8 +88,6 @@ private:
 
     void     split_lineaddr(uint64_t, uint64_t& tag, uint64_t& set);
     uint64_t join_lineaddr(uint64_t tag, uint64_t set);
-
-    void repopulate_set_with_belady_until_all_streams_nonempty(CacheSet&);
 };
 
 ////////////////////////////////////////////////////////////////

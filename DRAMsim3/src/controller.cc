@@ -24,7 +24,8 @@ Controller::Controller(int channel, const Config &config, const Timing &timing)
       is_unified_queue_(config.unified_queue),
       row_buf_policy_(config.row_buf_policy),
       last_trans_clk_(0),
-      write_draining_(0) {
+      write_draining_(0) 
+{
     if (is_unified_queue_) {
         unified_queue_.reserve(config_.trans_queue_size);
     } else {
@@ -154,7 +155,11 @@ bool Controller::WillAcceptTransaction(uint64_t hex_addr, bool is_write) const {
     } else if (!is_write) {
         return read_queue_.size() < read_queue_.capacity();
     } else {
+#ifdef WB_HAS_INF_CAPACITY
+        return true;
+#else
         return write_buffer_.size() < write_buffer_.capacity();
+#endif
     }
 }
 
@@ -198,8 +203,12 @@ void Controller::ScheduleTransaction() {
     // determine whether to schedule read or write
     if (write_draining_ == 0 && !is_unified_queue_) {
         // we basically have a upper and lower threshold for write buffer
+#ifdef WB_HAS_INF_CAPACITY
+        if (write_buffer_.size() > 8 && cmd_queue_.QueueEmpty())
+#else
         if ((write_buffer_.size() >= write_buffer_.capacity()) ||
             (write_buffer_.size() > 8 && cmd_queue_.QueueEmpty())) 
+#endif
         {
             write_draining_ = write_buffer_.size();
 

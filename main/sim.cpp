@@ -78,15 +78,6 @@ int main(int argc, char* argv[]) {
     GL_os_ = new OS(DRAM_SIZE_MB);
     GL_llc_controller_ = new LLC2Controller;
     GL_memory_controller_ = new DS3Interface(OPT_ds3_cfg_);
-
-    if constexpr (LLC_REPL_POLICY == CacheReplPolicy::BELADY) {
-        for (size_t i = 0; i < N_THREADS; i++) {
-            GL_llc_controller_->cache_.set_belady_trace_file(OPT_trace_file_, i);
-            // Get first 1M instructions.
-            GL_llc_controller_->cache_.populate_sets_with_belady(i, 1'000'000);
-        }
-    }
-
     /*
      * Start simulation.
      * */

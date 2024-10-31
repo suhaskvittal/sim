@@ -24,15 +24,6 @@ __TEMPLATE_CLASS__::Cache() {
     }
 }
 
-__TEMPLATE_HEADER__
-__TEMPLATE_CLASS__::~Cache() {
-    if constexpr (POL == CacheReplPolicy::BELADY) {
-        for (size_t i = 0; i < N_THREADS; i++) {
-            gzclose(belady_trace_in_[i]);
-        }
-    }
-}
-
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
@@ -45,15 +36,18 @@ __TEMPLATE_CLASS__::probe(uint64_t lineaddr) {
 
     CacheSet& s = sets_.at(k);
     // Update belady data if using OPT.
-    if constexpr (POL == CacheReplPolicy::BELADY) {
-        s.belady_access_stream_[t].pop_front();
-    }
     // Check access.
     auto it = s.find(t);
     if (it != s.end()) {
         // On hit: update metadata
         if constexpr (POL == CacheReplPolicy::LRU) {
+#ifdef IMPLEMENT_LRU_WITH_FIFO
+            auto _it = std::find(s.lru_fifo_.begin(), s.lru_fifo_.end(), t);
+            s.lru_fifo_.erase(_it);
+            s.lru_fifo_.push_back(t);
+#else
             it->second.lru_timestamp_ = GL_cycle_;
+#endif
         } else if constexpr (POL == CacheReplPolicy::SRRIP || POL == CacheReplPolicy::BRRIP) {
             it->second.rrpv_ = SRRIP_MAX;
         }
@@ -166,13 +160,6 @@ __TEMPLATE_CLASS__::select_victim(CacheSet& s) {
         return s.rand();
     } else if constexpr (POL == CacheReplPolicy::SRRIP || POL == CacheReplPolicy::BRRIP) {
         return s.srrip();
-    } else if constexpr (POL == CacheReplPolicy::BELADY) {
-        if (s.belady_access_stream_.empty()) {
-            std::cerr << "Belady access stream is empty!\n";
-            exit(1);
-        }
-        repopulate_set_with_belady_until_all_streams_nonempty(s);
-        return s.belady();
     } else {
         std::cerr << "Unsupported cache replacement policy.\n";
         exit(1);

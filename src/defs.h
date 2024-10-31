@@ -22,7 +22,7 @@
  * Enum declarations.
  * */
 enum class CacheResult      { HIT, MISS_NO_WB, MISS_WITH_WB };
-enum class CacheReplPolicy  { LRU, RAND, SRRIP, BRRIP, BELADY };
+enum class CacheReplPolicy  { LRU, RAND, SRRIP, BRRIP };
 enum class CacheHitPolicy   { DEFAULT, INVALIDATE };
 
 inline std::string_view
@@ -31,7 +31,6 @@ repl_policy_name(CacheReplPolicy p) {
     if (p == CacheReplPolicy::RAND)     return "Random";
     if (p == CacheReplPolicy::SRRIP)    return "Static Re-Reference Interval Prediction";
     if (p == CacheReplPolicy::BRRIP)    return "Bimodal Re-Reference Interval Prediction";
-    if (p == CacheReplPolicy::BELADY)   return "Belady's Min (OPT)";
     return "Unknown Cache Policy";
 }
 
