@@ -53,6 +53,14 @@ DRAMRank::tick() {
 ////////////////////////////////////////////////////////////////
 
 bool
+check_for_row_hit(const DRAMBank& bank, CommandQueue::iterator from, CommandQueue::iterator end) {
+    for (auto it = std::next(from,1); it != end; it++) {
+        if (ROW(it->lineaddr_) == bank.open_row_) return true;
+    }
+    return false;
+}
+
+bool
 DRAMRank::select_command(DRAMCommand& cmd) {
     if (is_waiting_to_do_ref_) return false;
 
@@ -66,34 +74,55 @@ DRAMRank::select_command(DRAMCommand& cmd) {
         if (GL_dram_cycle_ < bank.busy_with_ref_until_dram_cycle_ || cq.empty()) {
             continue;
         }
-        
-        // First, try and search for row buffer hits.
+
+        std::unordered_set<uint64_t> lineaddr_with_reads;
         for (auto it = cq.begin(); it != cq.end(); it++) {
             uint64_t r = ROW(it->lineaddr_);
-            if (r == bank.open_row_ && can_execute_command(*it)) {
-                // We have found our candidate.
-                cmd = *it;
-                cq.erase(it);
-                --num_cmds_;
-
-                if (!lineaddr_with_recent_row_miss_.count(it->lineaddr_)) {
-                    ++s_row_buf_hits_;
+            if (r == bank.open_row_) {
+                // If this is a read, then check for WAR dependence.
+                if (it->cmd_type_ == WRITE_CMD() && lineaddr_with_reads.count(it->lineaddr_)) {
+                    continue;
                 }
-                lineaddr_with_recent_row_miss_.erase(it->lineaddr_);
+                cmd = *it;
+            } else {
+                if constexpr (DRAM_PAGE_POLICY == DRAMPagePolicy::OPEN) {
+                    lineaddr_with_recent_row_miss_.insert(it->lineaddr_);
+
+                    cmd.lineaddr_ = it->lineaddr_;
+                    if (bank.open_row_ == -1) {  // Empty row buffer: just issue activate.
+                        cmd.cmd_type_ = DRAMCommandType::ACTIVATE;
+                    } else {
+                        // Precharge needs to meet several conditions.
+                        if ( it != cq.begin()
+                            || (check_for_row_hit(bank, it, cq.end()) && bank.consecutive_column_accesses_ < 4) )
+                        {
+                            continue;
+                        }
+                        cmd.cmd_type_ = DRAMCommandType::PRECHARGE;
+                    }
+                } else {
+                    // In a close-page policy: this is always an ACT.
+                    cmd.lineaddr_ = it->lineaddr_;
+                    cmd.cmd_type_ = DRAMCommandType::ACTIVATE;
+                }
+            }
+            // Return if this command can be executed.
+            if (can_execute_command(cmd)) {
+                if (cmd.cmd_type_ == READ_CMD() || cmd.cmd_type_ == WRITE_CMD()) {
+                    cq.erase(it);
+                    --num_cmds_;
+                    if constexpr (DRAM_PAGE_POLICY == DRAMPagePolicy::OPEN) {
+                        if (!lineaddr_with_recent_row_miss_.count(it->lineaddr_)) ++s_row_buf_hits_;
+                        lineaddr_with_recent_row_miss_.erase(it->lineaddr_);
+                    }
+                } else if (cmd.cmd_type_ == DRAMCommandType::PRECHARGE) {
+                    ++s_num_pre_demand_;
+                }
                 return true;
             }
-        }
 
-        // No row buffer hits: now do FCFS.
-        for (auto it = cq.begin(); it != cq.end(); it++) {
-            if (ROW(it->lineaddr_) == bank.open_row_) continue;
-            cmd.lineaddr_ = it->lineaddr_;
-            cmd.cmd_type_ = (bank.open_row_ >= 0) ? DRAMCommandType::PRECHARGE : DRAMCommandType::ACTIVATE;
-
-            // Return now if we can execute this command; otherwise, keep searching.
-            if (can_execute_command(cmd)) {
-                lineaddr_with_recent_row_miss_.insert(cmd.lineaddr_);
-                return true;
+            if (cmd.cmd_type_ == READ_CMD()) {
+                lineaddr_with_reads.insert(it->lineaddr_);
             }
         }
     } 
@@ -176,6 +205,9 @@ DRAMRank::execute_command(const DRAMCommand& cmd) {
             update_timing(next_column_read_ok_cycle_, GL_dram_conf_.tCCD_S, GL_dram_conf_.tCCD_L);
             update_timing(next_column_write_ok_cycle_, GL_dram_conf_.tCCD_S_RTW, GL_dram_conf_.tCCD_L_RTW);
             ++s_num_read_cmds_;
+            if (cmd.cmd_type_ == DRAMCommandType::READ) {
+                ++bank.consecutive_column_accesses_;
+            }
             break;
 
         case DRAMCommandType::WRITE_PRECHARGE:
@@ -188,6 +220,9 @@ DRAMRank::execute_command(const DRAMCommand& cmd) {
             update_timing(next_column_read_ok_cycle_, GL_dram_conf_.tCCD_S_WTR, GL_dram_conf_.tCCD_L_WTR);
             update_timing(next_column_write_ok_cycle_, GL_dram_conf_.tCCD_S_WR, GL_dram_conf_.tCCD_L_WR);
             ++s_num_write_cmds_;
+            if (cmd.cmd_type_ == DRAMCommandType::WRITE) {
+                ++bank.consecutive_column_accesses_;
+            }
             break;
 
         case DRAMCommandType::PRECHARGE:
@@ -195,6 +230,7 @@ DRAMRank::execute_command(const DRAMCommand& cmd) {
             latency += GL_dram_conf_.tRP;
             // Update timing constraints.
             bank.next_activate_ok_cycle_ = GL_dram_cycle_ + GL_dram_conf_.tRP;
+            bank.consecutive_column_accesses_ = 0;
             // Update stats.
             ++s_num_pre_;
             break;

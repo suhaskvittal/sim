@@ -56,6 +56,7 @@ struct DRAMSubchannelStats {
     uint64_t s_row_buf_hits_ =0;
     uint64_t s_num_acts_ =0;
     uint64_t s_num_pre_ =0;
+    uint64_t s_num_pre_demand_ =0;
 
     void print_stats(std::ostream&);
 };

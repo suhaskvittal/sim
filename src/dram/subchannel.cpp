@@ -21,6 +21,7 @@ DRAMSubchannelStats::print_stats(std::ostream& out) {
     PRINT_STAT(out, "DRAM_ROW_BUFFER_HITS", s_row_buf_hits_);
     PRINT_STAT(out, "DRAM_ACTIVATIONS", s_num_acts_);
     PRINT_STAT(out, "DRAM_PRECHARGES", s_num_pre_);
+    PRINT_STAT(out, "DRAM_PRE_DEMAND", s_num_pre_demand_);
 }
 
 ////////////////////////////////////////////////////////////////
@@ -107,6 +108,7 @@ DRAMSubchannel::accumulate_stats_into(DRAMSubchannelStats& st) {
         ADD_RK_STAT(s_num_acts_, i);
         ADD_RK_STAT(s_num_pre_, i);
         ADD_RK_STAT(s_row_buf_hits_, i);
+        ADD_RK_STAT(s_num_pre_demand_, i);
     }
 }
 

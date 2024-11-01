@@ -13,12 +13,18 @@
 ////////////////////////////////////////////////////////////////
 
 struct DRAMBank {
+    constexpr static size_t MAX_CONSECUTIVE_COLUMN_ACCESSES = 4;
     /*
      * `open_row_ == -1` means no row is in the global row buffer.
      * */
     int64_t open_row_ =-1;
 
     uint64_t busy_with_ref_until_dram_cycle_ =0;
+    /*
+     * Row should be precharged after `MAX_CONSECTIVE_COLUMN_ACCESSES` is hit,
+     * provided that the bank has no other outstanding accesses to the open row.
+     * */
+    size_t consecutive_column_accesses_ =0;
     /*
      * Timing constraint handling:
      *  `next_precharge_ok_cycle_` is tRAS after an ACT
