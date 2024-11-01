@@ -55,6 +55,8 @@ DRAMController::tick() {
 bool
 DRAMController::make_request(uint64_t lineaddr, bool is_read) {
     size_t idx = CHANNEL(lineaddr) * NUM_SUBCHANNELS + SUBCHANNEL(lineaddr);
+    if (is_read) ++s_num_reads_;
+    else         ++s_num_writes_;
     return mem_[idx].make_request(lineaddr, is_read);
 }
 

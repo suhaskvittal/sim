@@ -51,6 +51,9 @@ struct DRAMSubchannelStats {
     uint64_t s_tot_cycles_between_opp_write_drains_ =0;
     uint64_t s_num_trefi_ =0;
 
+    uint64_t s_num_read_cmds_ =0;
+    uint64_t s_num_write_cmds_ =0;
+    uint64_t s_row_buf_hits_ =0;
     uint64_t s_num_acts_ =0;
     uint64_t s_num_pre_ =0;
 
@@ -74,6 +77,8 @@ public:
     uint64_t s_tot_cycles_between_write_drains_ =0;
     uint64_t s_tot_cycles_between_opp_write_drains_ =0;
     uint64_t s_num_trefi_ =0;
+
+    size_t scid_;
 
     TransactionReturnQueue finished_reads_;
 private:

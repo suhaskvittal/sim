@@ -16,6 +16,9 @@ DRAMSubchannelStats::print_stats(std::ostream& out) {
     PRINT_STAT(out, "DRAM_OPP_WRITE_DRAINS", s_num_opp_write_drains_);
     PRINT_STAT(out, "DRAM_ALL_WRITE_DRAINS", s_num_write_drains_);
     PRINT_STAT(out, "DRAM_TREFI", s_num_trefi_);
+    PRINT_STAT(out, "DRAM_READ_CMDS", s_num_read_cmds_);
+    PRINT_STAT(out, "DRAM_WRITE_CMDS", s_num_write_cmds_);
+    PRINT_STAT(out, "DRAM_ROW_BUFFER_HITS", s_row_buf_hits_);
     PRINT_STAT(out, "DRAM_ACTIVATIONS", s_num_acts_);
     PRINT_STAT(out, "DRAM_PRECHARGES", s_num_pre_);
 }
@@ -37,6 +40,9 @@ DRAMSubchannel::tick() {
     // Check if we need to perform a refresh.
     if (GL_dram_cycle_ >= next_trefi_dram_cycle_) {
         schedule_refresh();
+    }
+    for (size_t i = 0; i < NUM_RANKS; i++) {
+        ranks_[i].tick();
     }
     // Try to issue a command.
     DRAMCommand cmd;
@@ -96,8 +102,11 @@ DRAMSubchannel::accumulate_stats_into(DRAMSubchannelStats& st) {
     ADD_SC_STAT(s_num_trefi_);
 
     for (size_t i = 0; i < NUM_RANKS; i++) {
+        ADD_RK_STAT(s_num_read_cmds_, i);
+        ADD_RK_STAT(s_num_write_cmds_, i);
         ADD_RK_STAT(s_num_acts_, i);
         ADD_RK_STAT(s_num_pre_, i);
+        ADD_RK_STAT(s_row_buf_hits_, i);
     }
 }
 

@@ -11,6 +11,7 @@
 #include "dram/bank.h"
 
 #include <deque>
+#include <unordered_set>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////
@@ -42,10 +43,16 @@ public:
     constexpr static size_t N_CMD_QUEUES = NUM_BANKGROUPS*NUM_BANKS;
 
     DRAMBank banks_[NUM_BANKGROUPS][NUM_BANKS];
+    size_t rankid_;
 
+    uint64_t s_num_read_cmds_ = 0;
+    uint64_t s_num_write_cmds_ = 0;
     uint64_t s_num_acts_ =0;
     uint64_t s_num_pre_ =0;
+    uint64_t s_row_buf_hits_ =0;
 private:
+    std::unordered_set<uint64_t> lineaddr_with_recent_row_miss_;
+
     CommandQueue cmd_queues_[N_CMD_QUEUES];
     size_t next_cmd_queue_idx_ =0;
     uint64_t num_cmds_ =0;

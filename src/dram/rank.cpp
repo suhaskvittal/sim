@@ -12,10 +12,14 @@
 
 constexpr size_t BL = BURST_LENGTH;
 
+static size_t rankcnt = 0;
+
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
-DRAMRank::DRAMRank() {
+DRAMRank::DRAMRank() 
+    :rankid_(rankcnt++)
+{
     for (size_t i = 0; i < N_CMD_QUEUES; i++) {
         cmd_queues_[i].reserve(CMD_QUEUE_SIZE);
     }
@@ -38,7 +42,9 @@ DRAMRank::tick() {
         }
     }
     // Update FAW.
-    while (GL_dram_cycle_ >= last_four_act_dram_cycles_.front()) {
+    while (!last_four_act_dram_cycles_.empty() 
+            && GL_dram_cycle_ >= last_four_act_dram_cycles_.front() + GL_dram_conf_.tFAW) 
+    {
         last_four_act_dram_cycles_.pop_front();
     }
 }
@@ -51,7 +57,7 @@ DRAMRank::select_command(DRAMCommand& cmd) {
     if (is_waiting_to_do_ref_) return false;
 
     for (size_t ii = 0; ii < N_CMD_QUEUES; ii++) {
-        size_t ba = next_cmd_queue_idx_ & ((1<<NUM_BANKS)-1),
+        size_t ba = next_cmd_queue_idx_ & (NUM_BANKS-1),
                bg = next_cmd_queue_idx_ >> Log2<NUM_BANKS>::value;
         DRAMBank& bank = banks_[bg][ba];
         CommandQueue& cq = cmd_queues_[next_cmd_queue_idx_];
@@ -71,14 +77,20 @@ DRAMRank::select_command(DRAMCommand& cmd) {
                 cmd = *it;
                 cq.erase(it);
                 --num_cmds_;
+
+                if (!lineaddr_with_recent_row_miss_.count(it->lineaddr_)) {
+                    ++s_row_buf_hits_;
+                }
+                lineaddr_with_recent_row_miss_.erase(it->lineaddr_);
                 return true;
             }
         }
 
         // No row buffer hits: select first entry in queue.
-        auto it = cq.begin();
-        // Check if we need to precharge or activate:
+        cmd.lineaddr_ = cq.front().lineaddr_;
         cmd.cmd_type_ = (bank.open_row_ >= 0) ? DRAMCommandType::PRECHARGE : DRAMCommandType::ACTIVATE;
+
+        lineaddr_with_recent_row_miss_.insert(cmd.lineaddr_);
         // Return now if we can execute this command; otherwise, keep searching.
         if (can_execute_command(cmd)) {
             return true;
@@ -158,10 +170,11 @@ DRAMRank::execute_command(const DRAMCommand& cmd) {
             bank.next_activate_ok_cycle_ = GL_dram_cycle_ + GL_dram_conf_.tRP;
             ++s_num_pre_;
         case DRAMCommandType::READ:
-            latency += GL_dram_conf_.CL + BL/2 * GL_dram_conf_.tCCD_L;
+            latency += GL_dram_conf_.CL + BL/2;
             // Update timing constraints.
             update_timing(next_column_read_ok_cycle_, GL_dram_conf_.tCCD_S, GL_dram_conf_.tCCD_L);
             update_timing(next_column_write_ok_cycle_, GL_dram_conf_.tCCD_S_RTW, GL_dram_conf_.tCCD_L_RTW);
+            ++s_num_read_cmds_;
             break;
 
         case DRAMCommandType::WRITE_PRECHARGE:
@@ -169,10 +182,11 @@ DRAMRank::execute_command(const DRAMCommand& cmd) {
             bank.next_activate_ok_cycle_ = GL_dram_cycle_ + GL_dram_conf_.tRP;
             ++s_num_pre_;
         case DRAMCommandType::WRITE:
-            latency += GL_dram_conf_.CWL + BL/2 * GL_dram_conf_.tCCD_L;
+            latency += GL_dram_conf_.CWL + BL/2;
             // Update timing constraints.
             update_timing(next_column_read_ok_cycle_, GL_dram_conf_.tCCD_S_WTR, GL_dram_conf_.tCCD_L_WTR);
             update_timing(next_column_write_ok_cycle_, GL_dram_conf_.tCCD_S_WR, GL_dram_conf_.tCCD_L_WR);
+            ++s_num_write_cmds_;
             break;
 
         case DRAMCommandType::PRECHARGE:

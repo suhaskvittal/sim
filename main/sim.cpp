@@ -26,7 +26,7 @@
 
 constexpr uint64_t  SEED = 12345678;
 
-constexpr uint64_t  DRAM_SIZE_MB = 32*1024;
+constexpr uint64_t  DRAM_SIZE_MB = CHANNEL_SIZE_MB * NUM_CHANNELS;
 constexpr double    DS3_CLK_SCALE = (4.0/2.4) - 1.0;
 
 ////////////////////////////////////////////////////////////////
@@ -219,6 +219,30 @@ print_sim_config() {
     list("LLC_SIZE_KB", LLC_SIZE_KB);
     list("LLC_ASSOC", LLC_ASSOC);
     list("LLC_REPL_POLICY", repl_policy_name(LLC_REPL_POLICY));
+
+    std::cout << "\n---------------------------------------------\n\n";
+    
+    list("DRAM_CHANNELS", NUM_CHANNELS);
+    list("DRAM_SUBCHANNELS", NUM_SUBCHANNELS);
+    list("DRAM_RANKS", NUM_RANKS);
+    list("DRAM_BANKGROUPS", NUM_BANKGROUPS);
+    list("DRAM_BANKS", NUM_BANKS);
+    list("DRAM_ROWS", NUM_ROWS);
+
+    list("DRAM_TOTAL_SIZE_MB", CHANNEL_SIZE_MB*NUM_CHANNELS);
+    list("DRAM_RANK_SIZE_MB", RANK_SIZE_MB);
+    list("DRAM_BANK_SIZE_MB", BANK_SIZE_MB);
+    list("DRAM_ROW_SIZE", NUM_COLUMNS*COLUMN_WIDTH/8);
+
+    std::cout << "\n---------------------------------------------\n\n";
+
+    list("tCAS (ns)", GL_dram_conf_.CL * GL_dram_conf_.tCK);
+    list("tRCD (ns)", GL_dram_conf_.tRCD * GL_dram_conf_.tCK);
+    list("tRP (ns)", GL_dram_conf_.tRP * GL_dram_conf_.tCK);
+    list("tRAS (ns)", GL_dram_conf_.tRAS * GL_dram_conf_.tCK);
+    list("tRFC (ns)", GL_dram_conf_.tRFC * GL_dram_conf_.tCK);
+    list("tREFI (us)", GL_dram_conf_.tREFI * GL_dram_conf_.tCK * 1e-3);
+
 
     std::cout << "\n---------------------------------------------\n\n";
 
