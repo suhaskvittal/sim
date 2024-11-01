@@ -7,9 +7,11 @@
 #define DRAM_RANK_h
 
 #include "defs.h"
+#include "dram/address.h"
 #include "dram/bank.h"
 
 #include <deque>
+#include <vector>
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -29,7 +31,7 @@ inline constexpr DRAMCommandType WRITE_CMD() {
     else                                                    return DRAMCommandType::WRITE_PRECHARGE;
 }
 
-using CommandQueue = std::deque<DRAMCommand>;
+using CommandQueue = std::vector<DRAMCommand>;
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -41,7 +43,8 @@ public:
 
     DRAMBank banks_[NUM_BANKGROUPS][NUM_BANKS];
 
-    const DRAMConfig& conf_;
+    uint64_t s_num_acts_ =0;
+    uint64_t s_num_pre_ =0;
 private:
     CommandQueue cmd_queues_[N_CMD_QUEUES];
     size_t next_cmd_queue_idx_ =0;
@@ -68,7 +71,7 @@ private:
      * */
     uint64_t any_bank_busy_until_dram_cycle_ =0;
 public:
-    DRAMRank(const DRAMConfig&);
+    DRAMRank(void);
     
     void tick(void);
 
@@ -102,9 +105,9 @@ public:
      * Returns reference to corresponding command queue.
      * */
     CommandQueue& get_command_queue(size_t bg, size_t ba);
+    bool all_cmd_queues_are_empty(void);
 private:
     void issue_refresh(void);
-    bool all_cmd_queues_are_empty(void);
 };
 
 ////////////////////////////////////////////////////////////////
@@ -115,10 +118,6 @@ inline void DRAMRank::set_needs_refresh() { is_waiting_to_do_ref_ = true; }
 template <bool IS_READ> bool
 DRAMRank::try_and_insert_command(uint64_t lineaddr) {
     constexpr DRAMCommandType CMD_TYPE = IS_READ ? READ_CMD() : WRITE_CMD();
-
-    if constexpr (!IS_READ) {
-        if (pending_reads_.count(lineaddr) > 0) return false;
-    }
 
     size_t bg = BANKGROUP(lineaddr),
            ba = BANK(lineaddr);

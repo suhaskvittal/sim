@@ -19,27 +19,43 @@
 
 struct DRAMTransaction {
     uint64_t lineaddr_;
-    uint64_t cycle_added_;
-    uint64_t cycle_fired_;
-    uint64_t cycle_finished_;
+    uint64_t cpu_cycle_added_;
+    uint64_t cpu_cycle_fired_;
+    uint64_t dram_cycle_finished_;
 
     DRAMTransaction(uint64_t lineaddr)
         :lineaddr_(lineaddr),
-        cycle_added_(GL_cycle_)
+        cpu_cycle_added_(GL_cycle_)
     {}
 
     DRAMTransaction(const DRAMTransaction&) =default;
 };
 
 struct DRAMTransactionComparator {
-    inline bool operator<(const DRAMTransaction* t1, const DRAMTransaction* t2) const {
-        return t1->cycle_finished_ > t2->cycle_finished_;
+    inline bool operator()(const DRAMTransaction* t1, const DRAMTransaction* t2) const {
+        return t1->dram_cycle_finished_ > t2->dram_cycle_finished_;
     }
 };
 
 using TransactionReturnQueue = std::priority_queue<DRAMTransaction*, 
                                                     std::vector<DRAMTransaction*>,
                                                     DRAMTransactionComparator>;
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+struct DRAMSubchannelStats {
+    uint64_t s_num_opp_write_drains_ =0;
+    uint64_t s_num_write_drains_ =0;
+    uint64_t s_tot_cycles_between_write_drains_ =0;
+    uint64_t s_tot_cycles_between_opp_write_drains_ =0;
+    uint64_t s_num_trefi_ =0;
+
+    uint64_t s_num_acts_ =0;
+    uint64_t s_num_pre_ =0;
+
+    void print_stats(std::ostream&);
+};
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -57,10 +73,9 @@ public:
     uint64_t s_num_write_drains_ =0;
     uint64_t s_tot_cycles_between_write_drains_ =0;
     uint64_t s_tot_cycles_between_opp_write_drains_ =0;
+    uint64_t s_num_trefi_ =0;
 
     TransactionReturnQueue finished_reads_;
-
-    const DRAMConfig& conf_;
 private:
     DRAMRank ranks_[NUM_RANKS];
     size_t next_rank_with_cmd_ =0;
@@ -92,13 +107,18 @@ private:
     uint64_t next_trefi_dram_cycle_ =0;
     size_t next_rank_to_ref_ =0;
 public:
-    DRAMSubchannel(const DRAMConfig&);
+    DRAMSubchannel(void);
 
     void tick(void);
     /*
      * Returns true if the request was enqueued.
      * */
     bool make_request(uint64_t lineaddr, bool is_read);
+    /*
+     * Adds stats into the passed in `DRAMSubchannel`. This is only to aid printing out
+     * the stats as one unified value.
+     * */ 
+    void accumulate_stats_into(DRAMSubchannelStats&);
 private:
     void schedule_refresh(void);
     void schedule_next_request(void);
@@ -106,8 +126,22 @@ private:
     void complete_read(uint64_t, uint64_t latency);
     void complete_write(uint64_t, uint64_t latency);
 
+    template <bool IS_READ>
+    bool try_and_insert_command(uint64_t lineaddr);
+
     bool all_cmd_queues_are_empty(void);
 };
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+template <bool IS_READ> inline bool
+DRAMSubchannel::try_and_insert_command(uint64_t lineaddr) {
+    if constexpr (!IS_READ) {
+        if (pending_reads_.count(lineaddr) > 0) return false;
+    }
+    return ranks_[ RANK(lineaddr) ].try_and_insert_command<IS_READ>(lineaddr);
+}
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////

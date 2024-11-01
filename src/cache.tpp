@@ -35,7 +35,6 @@ __TEMPLATE_CLASS__::probe(uint64_t lineaddr) {
     split_lineaddr(lineaddr, t, k);
 
     CacheSet& s = sets_.at(k);
-    // Update belady data if using OPT.
     // Check access.
     auto it = s.find(t);
     if (it != s.end()) {
@@ -113,45 +112,6 @@ __TEMPLATE_CLASS__::invalidate(uint64_t lineaddr) {
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
 
-__TEMPLATE_HEADER__ void
-__TEMPLATE_CLASS__::set_belady_trace_file(std::string trace_file, size_t coreid) {
-    belady_trace_in_[coreid] = gzopen(trace_file.c_str(), "r");
-}
-
-__TEMPLATE_HEADER__ void
-__TEMPLATE_CLASS__::populate_sets_with_belady(size_t coreid, uint64_t inst_limit) {
-    gzFile& fin = belady_trace_in_[coreid];
-
-    uint64_t first_inst;
-    bool first = true;
-    while (!gzeof(fin)) {
-        uint64_t inst_num = 0;
-        bool is_write;
-        uint64_t vla = 0;
-        gzread(fin, &inst_num, 5);
-        gzread(fin, &is_write, 1);
-        gzread(fin, &vla, 4);
-
-        if (first) {
-            first_inst = inst_num;
-            first = false;
-        }
-        if (is_write) continue;
-
-        TAG_VA_WITH_COREID(vla, coreid);
-        // Translate `vla` to a physical address.
-        uint64_t lineaddr = GL_os_->v2p(vla);
-        uint64_t t, s;
-        split_lineaddr(lineaddr, t, s);
-        sets_[s].belady_access_stream_[t].push_back(inst_num);
-
-        if (inst_num-first_inst > inst_limit) break;
-    }
-}
-
-////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////
-
 __TEMPLATE_HEADER__ CacheSet::iterator
 __TEMPLATE_CLASS__::select_victim(CacheSet& s) {
     if constexpr (POL == CacheReplPolicy::LRU) {
@@ -192,19 +152,6 @@ __TEMPLATE_CLASS__::split_lineaddr(uint64_t lineaddr, uint64_t& t, uint64_t& s) 
 __TEMPLATE_HEADER__ inline uint64_t
 __TEMPLATE_CLASS__::join_lineaddr(uint64_t t, uint64_t s) {
     return (t << Log2<SETS>::value) | s;
-}
-
-////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////
-
-__TEMPLATE_HEADER__ void
-__TEMPLATE_CLASS__::repopulate_set_with_belady_until_all_streams_nonempty(CacheSet& s) {
-    while (s.any_belady_stream_empty()) {
-        // Read next 1M instructions.
-        for (size_t i = 0; i < N_THREADS; i++) {
-            populate_sets_with_belady(i, 1'000'000);
-        }
-    }
 }
 
 ////////////////////////////////////////////////////////////////

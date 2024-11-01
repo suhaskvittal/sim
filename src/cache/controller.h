@@ -8,8 +8,6 @@
 
 #include "defs.h"
 #include "cache.h"
-#include "core.h"
-#include "ds3/interface.h"
 
 #include <string_view>
 #include <unordered_map>

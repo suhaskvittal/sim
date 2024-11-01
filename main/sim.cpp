@@ -7,8 +7,14 @@
 
 #include <core.h>
 #include <cache/controller/llc2.h>
-#include <ds3/interface.h>
 #include <os.h>
+
+#ifdef USE_DRAMSIM3
+#include <ds3/interface.h>
+#else
+#include <dram/controller.h>
+#include <dram/config.h>
+#endif
 
 #include <utils/argparse.h>
 #include <utils/timer.h>
@@ -31,9 +37,21 @@ uint64_t    GL_cycle_ = 0;
 OS*             GL_os_;
 Core*           GL_cores_[N_THREADS];
 LLC2Controller* GL_llc_controller_;
+
+#ifdef USE_DRAMSIM3
 DS3Interface*   GL_memory_controller_;
+#else
+DRAMController* GL_memory_controller_;
+DRAMConfig      GL_dram_conf_;
+#endif
 
 std::mt19937_64 GL_RNG_(SEED);
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+void init_globals(void);
+void cleanup(void);
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -68,16 +86,8 @@ int main(int argc, char* argv[]) {
     ARGS("trace", OPT_trace_file_);
     ARGS("ds3cfg", OPT_ds3_cfg_);
     ARGS("inst", OPT_num_inst_);
-    /*
-     * Initialize global structures.
-     * */
-    for (size_t i = 0; i < N_THREADS; i++) {
-        GL_cores_[i] = new Core(i, 4);
-        GL_cores_[i]->set_trace_file(OPT_trace_file_);
-    }
-    GL_os_ = new OS(DRAM_SIZE_MB);
-    GL_llc_controller_ = new LLC2Controller;
-    GL_memory_controller_ = new DS3Interface(OPT_ds3_cfg_);
+
+    init_globals();
     /*
      * Start simulation.
      * */
@@ -91,7 +101,6 @@ int main(int argc, char* argv[]) {
     uint64_t t_ns_spent_in_core = 0,
              t_ns_spent_in_mem = 0;
     Timer tt;
-
     do {
         // Print progress.
         if (GL_cycle_ % 1'000'000 == 0) {
@@ -100,15 +109,20 @@ int main(int argc, char* argv[]) {
 
         all_done = true;
 
+#ifdef USE_DRAMSIM3
         if (leap_op >= 1.0) {
             leap_op -= 1.0;
         } else {
             tt.start();
             GL_memory_controller_->mem_->ClockTick();
             t_ns_spent_in_mem += tt.end();
-
             leap_op += DS3_CLK_SCALE;
         }
+#else
+        tt.start();
+        GL_memory_controller_->tick();
+        t_ns_spent_in_mem += tt.end();
+#endif
 
         tt.start();
         
@@ -135,12 +149,42 @@ int main(int argc, char* argv[]) {
     
     std::cout << "\n";
 
+    cleanup();
+
+    return 0;
+}
+
+////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////
+
+void
+init_globals() {
+    for (size_t i = 0; i < N_THREADS; i++) {
+        GL_cores_[i] = new Core(i, 4);
+        GL_cores_[i]->set_trace_file(OPT_trace_file_);
+    }
+    GL_os_ = new OS(DRAM_SIZE_MB);
+    GL_llc_controller_ = new LLC2Controller;
+#ifdef USE_DRAMSIM3
+    GL_memory_controller_ = new DS3Interface(OPT_ds3_cfg_);
+#else
+    GL_memory_controller_ = new DRAMController;
+    fill_config_for_4400_4800_5200(GL_dram_conf_);
+#endif
+}
+
+void
+cleanup() {
     for (size_t i = 0; i < N_THREADS; i++) {
         GL_cores_[i]->print_stats(std::cout);
     }
     GL_os_->print_stats(std::cout);
     GL_llc_controller_->print_stats(std::cout);
+#ifdef USE_DRAMSIM3
     GL_memory_controller_->print_stats();
+#else
+    GL_memory_controller_->print_stats(std::cout);
+#endif
 
     for (size_t i = 0; i < N_THREADS; i++) {
         delete GL_cores_[i];
@@ -148,8 +192,6 @@ int main(int argc, char* argv[]) {
     delete GL_os_;
     delete GL_llc_controller_;
     delete GL_memory_controller_;
-
-    return 0;
 }
 
 ////////////////////////////////////////////////////////////////

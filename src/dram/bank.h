@@ -18,9 +18,6 @@ struct DRAMBank {
      * */
     int64_t open_row_ =-1;
 
-    uint64_t s_row_buf_misses_ =0;
-    uint64_t s_row_buf_accesses_ =0;
-
     uint64_t busy_with_ref_until_dram_cycle_ =0;
     /*
      * Timing constraint handling:

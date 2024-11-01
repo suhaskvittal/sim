@@ -101,9 +101,9 @@ constexpr size_t COLUMN_WIDTH = 32;
 
 constexpr size_t CHANNEL_SIZE_MB = 1L << 15;
 constexpr size_t SUBCHANNEL_SIZE_MB = CHANNEL_SIZE_MB / NUM_SUBCHANNELS;
-constexpr size_t BANK_SIZE_MB = NUM_ROWS * (NUM_COLUMNS * COLUMN_WIDTH)/8;
+constexpr size_t BANK_SIZE_MB = (NUM_ROWS * (NUM_COLUMNS * COLUMN_WIDTH)/8) >> 20;
 
-constexpr size_t RANK_SIZE_MB = SUBCHANNEL_SIZE_MB / (BANK_SIZE_MB * NUM_BANKS * NUM_BANKGROUPS);
+constexpr size_t RANK_SIZE_MB = BANK_SIZE_MB * NUM_BANKS * NUM_BANKGROUPS;
 constexpr size_t NUM_RANKS = SUBCHANNEL_SIZE_MB/RANK_SIZE_MB;
 
 ////////////////////////////////////////////////////////////////
@@ -124,7 +124,13 @@ constexpr size_t BURST_LENGTH = LINESIZE / COLUMN_WIDTH;
 class OS;
 class Core;
 class LLC2Controller;
+
+#ifdef USE_DRAMSIM3
 class DS3Interface;
+#else
+class DRAMConfig;
+class DRAMController;
+#endif
 
 ////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////
@@ -135,7 +141,13 @@ extern uint64_t         GL_dram_cycle_;
 extern OS*              GL_os_;
 extern Core*            GL_cores_[N_THREADS];
 extern LLC2Controller*  GL_llc_controller_;
+
+#ifdef USE_DRAMSIM3
 extern DS3Interface*    GL_memory_controller_;
+#else
+extern DRAMController*  GL_memory_controller_;
+extern DRAMConfig       GL_dram_conf_;
+#endif
 
 extern std::mt19937_64  GL_RNG_;
 

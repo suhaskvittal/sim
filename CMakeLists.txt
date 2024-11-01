@@ -35,9 +35,18 @@ set(SIM_FILES
     src/os.cpp
     src/cache/replacement.cpp
     src/cache/controller/llc2.cpp
-    src/ds3/interface.cpp
     src/utils/argparse.cpp
 )
+
+if (USE_DRAMSIM3)
+    set(SIM_FILES ${SIM_FILES} src/ds3/interface.cpp)
+else()
+    set(SIM_FILES ${SIM_FILES} 
+        src/dram/config.cpp
+        src/dram/controller.cpp
+        src/dram/rank.cpp
+        src/dram/subchannel.cpp)
+endif()
 
 find_package(ZLIB)
 
@@ -45,10 +54,13 @@ add_executable(sim main/sim.cpp ${SIM_FILES})
 target_compile_options(sim PRIVATE ${COMPILE_OPTIONS})
 target_include_directories(sim PRIVATE "src")
 
-add_subdirectory(DRAMsim3)
+if (USE_DRAMSIM3)
+    add_subdirectory(DRAMsim3)
+    target_compile_definitions(sim PRIVATE USE_DRAMSIM3=ON)
+    target_link_libraries(sim PRIVATE dramsim3)
+endif()
 
-target_link_libraries(sim PRIVATE ZLIB::ZLIB dramsim3)
-
+target_link_libraries(sim PRIVATE ZLIB::ZLIB)
 target_compile_definitions(sim PRIVATE N_THREADS=4)
 # Optional compile definitions:
 if (LLC_REPL_POLICY)
