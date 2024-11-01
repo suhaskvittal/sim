@@ -63,11 +63,9 @@ DRAMRank::select_command(DRAMCommand& cmd) {
         CommandQueue& cq = cmd_queues_[next_cmd_queue_idx_];
         next_cmd_queue_idx_ = INCREMENT_AND_MOD_BY_POW2(next_cmd_queue_idx_, CMD_QUEUE_SIZE);
 
-        if (GL_dram_cycle_ < bank.busy_with_ref_until_dram_cycle_) {
+        if (GL_dram_cycle_ < bank.busy_with_ref_until_dram_cycle_ || cq.empty()) {
             continue;
         }
-
-        if (cq.empty()) continue;
         
         // First, try and search for row buffer hits.
         for (auto it = cq.begin(); it != cq.end(); it++) {
@@ -86,14 +84,17 @@ DRAMRank::select_command(DRAMCommand& cmd) {
             }
         }
 
-        // No row buffer hits: select first entry in queue.
-        cmd.lineaddr_ = cq.front().lineaddr_;
-        cmd.cmd_type_ = (bank.open_row_ >= 0) ? DRAMCommandType::PRECHARGE : DRAMCommandType::ACTIVATE;
+        // No row buffer hits: now do FCFS.
+        for (auto it = cq.begin(); it != cq.end(); it++) {
+            if (ROW(it->lineaddr_) == bank.open_row_) continue;
+            cmd.lineaddr_ = it->lineaddr_;
+            cmd.cmd_type_ = (bank.open_row_ >= 0) ? DRAMCommandType::PRECHARGE : DRAMCommandType::ACTIVATE;
 
-        lineaddr_with_recent_row_miss_.insert(cmd.lineaddr_);
-        // Return now if we can execute this command; otherwise, keep searching.
-        if (can_execute_command(cmd)) {
-            return true;
+            // Return now if we can execute this command; otherwise, keep searching.
+            if (can_execute_command(cmd)) {
+                lineaddr_with_recent_row_miss_.insert(cmd.lineaddr_);
+                return true;
+            }
         }
     } 
     return false;
@@ -109,7 +110,7 @@ DRAMRank::can_execute_command(const DRAMCommand& cmd) {
         return false;
     }
     // Get same-bankgroup/diff-bankgroup index. 
-    size_t sbg = static_cast<size_t>(last_bankgroup_used_ == BANKGROUP(cmd.lineaddr_));
+    size_t sbg = (last_bankgroup_used_ == BANKGROUP(cmd.lineaddr_)) ? 1 : 0;
     // Check if tCCD timings are met:
     bool read_is_ok = GL_dram_cycle_ >= next_column_read_ok_cycle_[sbg];
     bool write_is_ok = GL_dram_cycle_ >= next_column_write_ok_cycle_[sbg];
@@ -215,6 +216,7 @@ DRAMRank::execute_command(const DRAMCommand& cmd) {
             exit(1);
     }
     any_bank_busy_until_dram_cycle_ = std::max(any_bank_busy_until_dram_cycle_, GL_dram_cycle_ + latency);
+    last_bankgroup_used_ = BANKGROUP(cmd.lineaddr_);
     return latency;
 }
 
